@@ -3,9 +3,7 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, radius, spacing } from '../utils/theme';
-import { RootStackParamList } from '../types';
 
 interface UniversalHeaderProps {
   title: string;
@@ -18,8 +16,22 @@ export const UniversalHeader: React.FC<UniversalHeaderProps> = ({
   isHome = false,
   showActions = true,
 }) => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation();
   const displayTitle = isHome ? 'SafeSpace' : title;
+
+  const openSettings = () => {
+    const parent = navigation.getParent();
+    if (parent?.navigate) {
+      parent.navigate('Settings' as never);
+    }
+  };
+
+  const openNotifications = () => {
+    const parent = navigation.getParent();
+    if (parent?.navigate) {
+      parent.navigate('Notifications' as never);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -28,16 +40,10 @@ export const UniversalHeader: React.FC<UniversalHeaderProps> = ({
       <View style={[styles.side, styles.actions]}>
         {showActions && (
           <>
-            <TouchableOpacity
-              style={styles.iconBtn}
-              onPress={() => navigation.navigate('Notifications')}
-            >
+            <TouchableOpacity style={styles.iconBtn} onPress={openNotifications}>
               <Ionicons name="notifications-outline" size={22} color={colors.primary} />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.iconBtn}
-              onPress={() => navigation.navigate('Settings')}
-            >
+            <TouchableOpacity style={styles.iconBtn} onPress={openSettings}>
               <Ionicons name="settings-outline" size={22} color={colors.primary} />
             </TouchableOpacity>
           </>
@@ -57,10 +63,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomLeftRadius: radius.lg,
     borderBottomRightRadius: radius.lg,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
     elevation: 4,
   },
   side: { width: 72 },
@@ -72,8 +74,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     flex: 1,
   },
-  iconBtn: {
-    padding: spacing.xs,
-    marginLeft: spacing.xs,
-  },
+  iconBtn: { padding: spacing.xs, marginLeft: spacing.xs },
 });

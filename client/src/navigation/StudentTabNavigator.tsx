@@ -2,36 +2,41 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { Text } from 'react-native-paper';
 import { MoodHomeScreen } from '../screens/mood/MoodHomeScreen';
 import { PeerSupportScreen } from '../screens/peer/PeerSupportScreen';
 import { JournalScreen } from '../screens/journal/JournalScreen';
 import { ConsultationScreen } from '../screens/consultation/ConsultationScreen';
 import { InsightsScreen } from '../screens/insights/InsightsScreen';
-import { RootTabParamList } from '../types';
+import { StudentProfileWrapper } from '../screens/shared/StudentProfileWrapper';
+import { StudentTabParamList } from '../types';
 import { colors, radius, spacing } from '../utils/theme';
 
-const Tab = createBottomTabNavigator<RootTabParamList>();
+const Tab = createBottomTabNavigator<StudentTabParamList>();
 
-const tabIcons: Record<keyof RootTabParamList, keyof typeof Ionicons.glyphMap> = {
+const icons: Record<keyof StudentTabParamList, keyof typeof Ionicons.glyphMap> = {
   Mood: 'happy-outline',
   PeerSupport: 'people-outline',
   Journal: 'book-outline',
   Consultation: 'chatbubbles-outline',
   Insights: 'stats-chart-outline',
+  Profile: 'person-outline',
 };
 
-export const TabNavigator: React.FC = () => (
+export const StudentTabNavigator: React.FC = () => (
   <Tab.Navigator
     screenOptions={({ route }) => ({
       headerShown: false,
-      tabBarIcon: ({ color, size }) => (
-        <Ionicons name={tabIcons[route.name]} size={size} color={color} />
+      tabBarIcon: ({ color, size, focused }) => (
+        <>
+          {focused && <Text style={styles.dot}>●</Text>}
+          <Ionicons name={icons[route.name]} size={size} color={color} />
+        </>
       ),
       tabBarActiveTintColor: colors.primary,
       tabBarInactiveTintColor: colors.textMuted,
       tabBarStyle: styles.tabBar,
       tabBarLabelStyle: styles.tabLabel,
-      tabBarActiveBackgroundColor: colors.primaryLight,
     })}
   >
     <Tab.Screen name="Mood" component={MoodHomeScreen} />
@@ -39,6 +44,7 @@ export const TabNavigator: React.FC = () => (
     <Tab.Screen name="Journal" component={JournalScreen} />
     <Tab.Screen name="Consultation" component={ConsultationScreen} options={{ tabBarLabel: 'Consult' }} />
     <Tab.Screen name="Insights" component={InsightsScreen} />
+    <Tab.Screen name="Profile" component={StudentProfileWrapper} />
   </Tab.Navigator>
 );
 
@@ -52,13 +58,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: colors.surface,
     borderTopWidth: 0,
-    paddingBottom: 6,
-    paddingTop: 6,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
     elevation: 8,
   },
-  tabLabel: { fontSize: 11, fontWeight: '600' },
+  tabLabel: { fontSize: 10, fontWeight: '600' },
+  dot: { fontSize: 6, color: colors.secondary, position: 'absolute', top: -4 },
 });

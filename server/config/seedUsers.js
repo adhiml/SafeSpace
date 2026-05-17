@@ -1,35 +1,24 @@
 const User = require('../models/User');
-const { currentUser, DUMMY_COUNSELLOR_ID } = require('../utils/currentUser');
+const { DEMO_USERS } = require('../utils/demoUsers');
 
-/** Ensures demo student + counsellor exist in MongoDB */
 const seedUsers = async () => {
-  await User.findByIdAndUpdate(
-    currentUser._id,
-    {
-      _id: currentUser._id,
-      user_name: currentUser.user_name,
-      anonymous_name: 'AnonymousDemo',
-      email: 'demo@safespace.app',
-      role: 'student',
-      faculty: 'General Studies',
-    },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
-
-  await User.findByIdAndUpdate(
-    DUMMY_COUNSELLOR_ID,
-    {
-      _id: DUMMY_COUNSELLOR_ID,
-      user_name: 'Dr. Morgan Lee',
-      anonymous_name: 'CounsellorML',
-      email: 'counsellor@safespace.app',
-      role: 'counsellor',
-      faculty: 'Student Wellness Centre',
-    },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
-
-  console.log('Demo users ready:', currentUser._id, DUMMY_COUNSELLOR_ID);
+  for (const user of Object.values(DEMO_USERS)) {
+    await User.findByIdAndUpdate(
+      user._id,
+      {
+        _id: user._id,
+        user_name: user.user_name,
+        anonymous_name: user.anonymous_name,
+        email: `${user._id}@safespace.app`,
+        role: user.role,
+        faculty: user.faculty || '',
+        gender: '',
+        profile_picture: '',
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+  }
+  console.log('Demo users ready:', Object.keys(DEMO_USERS).join(', '));
 };
 
 module.exports = seedUsers;

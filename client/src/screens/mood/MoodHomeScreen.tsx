@@ -7,17 +7,18 @@ import { Card } from '../../components/Card';
 import { MoodSelectorBar } from '../../components/MoodSelectorBar';
 import { RecommendationCarousel } from '../../components/RecommendationCarousel';
 import { ScreenContainer } from '../../components/ScreenContainer';
-import { currentUser } from '../../constants/currentUser';
 import { useMood } from '../../context/MoodContext';
+import { useRole } from '../../context/RoleContext';
 import * as moodService from '../../services/moodService';
-import { MoodEntry, RootStackParamList } from '../../types';
+import { MoodEntry, StudentStackParamList } from '../../types';
 import { MOOD_COLORS, MOOD_LABELS } from '../../utils/constants';
 import { getRecommendations } from '../../utils/recommendations';
-import { colors, radius, spacing } from '../../utils/theme';
+import { colors, spacing } from '../../utils/theme';
 
 export const MoodHomeScreen: React.FC = () => {
-  const { latestMood, setLatestMood, refreshMoods } = useMood();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { profile } = useRole();
+  const { latestMood, setLatestMood, refreshMoods, needsCheckIn } = useMood();
+  const navigation = useNavigation<NativeStackNavigationProp<StudentStackParamList>>();
   const [history, setHistory] = useState<MoodEntry[]>([]);
   const [updating, setUpdating] = useState(false);
 
@@ -25,7 +26,10 @@ export const MoodHomeScreen: React.FC = () => {
     useCallback(() => {
       refreshMoods().catch(() => undefined);
       moodService.getMoods().then(setHistory).catch(() => setHistory([]));
-    }, [refreshMoods])
+      if (needsCheckIn) {
+        navigation.navigate('MoodCheckIn');
+      }
+    }, [refreshMoods, needsCheckIn, navigation])
   );
 
   const currentLevel = latestMood?.mood_level ?? 3;
@@ -54,7 +58,7 @@ export const MoodHomeScreen: React.FC = () => {
       <View style={styles.welcomeRow}>
         <Text style={styles.welcome}>Welcome back, </Text>
         <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-          <Text style={styles.nameLink}>{currentUser.user_name}</Text>
+          <Text style={styles.nameLink}>{profile?.user_name || 'Student'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -71,7 +75,7 @@ export const MoodHomeScreen: React.FC = () => {
 
       <Text style={[styles.sectionTitle, styles.historyTitle]}>Mood history</Text>
       {history.length === 0 ? (
-        <Text style={styles.empty}>No mood entries yet — complete today's check-in.</Text>
+        <Text style={styles.empty}>No mood entries yet.</Text>
       ) : (
         history.slice(0, 7).map((entry) => (
           <View key={entry._id} style={styles.historyRow}>
@@ -101,7 +105,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     padding: spacing.md,
-    borderRadius: radius.md,
+    borderRadius: 12,
     marginBottom: spacing.sm,
   },
   moodDot: { width: 12, height: 12, borderRadius: 6, marginRight: spacing.md },

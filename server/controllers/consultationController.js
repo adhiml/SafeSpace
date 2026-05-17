@@ -3,11 +3,12 @@ const ChatMessage = require('../models/ChatMessage');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
-const { CURRENT_USER_ID, DUMMY_COUNSELLOR_ID } = require('../utils/currentUser');
+
+const COUNSELLOR_ID = 'counsellor_001';
 
 const createAppointment = asyncHandler(async (req, res) => {
   const {
-    counsellor_user_id = DUMMY_COUNSELLOR_ID,
+    counsellor_user_id = COUNSELLOR_ID,
     appointment_datetime,
     session_details,
     is_anonymous,
@@ -18,14 +19,8 @@ const createAppointment = asyncHandler(async (req, res) => {
     throw new Error('appointment_datetime is required');
   }
 
-  const counsellor = await User.findOne({ _id: counsellor_user_id, role: 'counsellor' });
-  if (!counsellor) {
-    res.status(400);
-    throw new Error('Invalid counsellor');
-  }
-
   const appointment = await Appointment.create({
-    student_user_id: CURRENT_USER_ID,
+    student_user_id: req.demoUserId,
     counsellor_user_id,
     appointment_datetime,
     session_details: session_details || '',
@@ -33,10 +28,10 @@ const createAppointment = asyncHandler(async (req, res) => {
   });
 
   await Notification.create({
-    user_id: CURRENT_USER_ID,
+    user_id: COUNSELLOR_ID,
     appointment_id: appointment._id,
-    title: 'Appointment requested',
-    message: 'Your counselling session request has been submitted.',
+    title: 'New appointment request',
+    message: 'A student has requested a counselling session.',
   });
 
   const populated = await Appointment.findById(appointment._id)
@@ -47,7 +42,13 @@ const createAppointment = asyncHandler(async (req, res) => {
 });
 
 const getAppointments = asyncHandler(async (req, res) => {
-  const appointments = await Appointment.find({ student_user_id: CURRENT_USER_ID })
+  const user = await User.findById(req.demoUserId);
+  const filter =
+    user?.role === 'counsellor'
+      ? { counsellor_user_id: req.demoUserId }
+      : { student_user_id: req.demoUserId };
+
+  const appointments = await Appointment.find(filter)
     .sort({ appointment_datetime: -1 })
     .populate('student_user_id', 'user_name anonymous_name')
     .populate('counsellor_user_id', 'user_name');
@@ -55,23 +56,33 @@ const getAppointments = asyncHandler(async (req, res) => {
   res.json(appointments);
 });
 
+const updateAppointmentStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  const appointment = await Appointment.findOneAndUpdate(
+    { _id: req.params.id, counsellor_user_id: req.demoUserId },
+    { status },
+    { new: true }
+  )
+    .populate('student_user_id', 'user_name anonymous_name')
+    .populate('counsellor_user_id', 'user_name');
+
+  if (!appointment) {
+    res.status(404);
+    throw new Error('Appointment not found');
+  }
+  res.json(appointment);
+});
+
 const sendMessage = asyncHandler(async (req, res) => {
   const { appointment_id, message } = req.body;
-
   if (!appointment_id || !message) {
     res.status(400);
     throw new Error('appointment_id and message are required');
   }
 
-  const appointment = await Appointment.findById(appointment_id);
-  if (!appointment) {
-    res.status(404);
-    throw new Error('Appointment not found');
-  }
-
   const chatMessage = await ChatMessage.create({
     appointment_id,
-    sender_id: CURRENT_USER_ID,
+    sender_id: req.demoUserId,
     message,
     sent_at: new Date(),
   });
@@ -83,7 +94,7 @@ const sendMessage = asyncHandler(async (req, res) => {
 const getMessages = asyncHandler(async (req, res) => {
   const messages = await ChatMessage.find({ appointment_id: req.params.appointmentId })
     .sort({ sent_at: 1 })
-    .populate('sender_id', 'user_name');
+    .populate('sender_id', 'user_name anonymous_name');
   res.json(messages);
 });
 
@@ -93,7 +104,7 @@ const getCounsellors = asyncHandler(async (req, res) => {
 });
 
 const getNotifications = asyncHandler(async (req, res) => {
-  const notifications = await Notification.find({ user_id: CURRENT_USER_ID }).sort({
+  const notifications = await Notification.find({ user_id: req.demoUserId }).sort({
     created_at: -1,
   });
   res.json(notifications);
@@ -102,6 +113,7 @@ const getNotifications = asyncHandler(async (req, res) => {
 module.exports = {
   createAppointment,
   getAppointments,
+  updateAppointmentStatus,
   sendMessage,
   getMessages,
   getCounsellors,

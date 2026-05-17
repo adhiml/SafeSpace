@@ -1,5 +1,5 @@
 import api from '../api/client';
-import { MoodAnalytics, MoodEntry } from '../types';
+import { CounsellorAnalytics, MoodAnalytics, MoodEntry } from '../types';
 
 export const createMood = async (payload: {
   mood_level: number;
@@ -17,5 +17,10 @@ export const getMoods = async () => {
 
 export const getMoodAnalytics = async () => {
   const { data } = await api.get<MoodAnalytics>('/moods/analytics');
+  return data;
+};
+
+export const getCounsellorAnalytics = async () => {
+  const { data } = await api.get<CounsellorAnalytics>('/moods/analytics/counsellor');
   return data;
 };

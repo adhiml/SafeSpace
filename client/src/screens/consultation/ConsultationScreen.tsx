@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, StyleSheet } from 'react-native';
+import { Alert, FlatList, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from 'react-native-paper';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,25 +7,22 @@ import { Card } from '../../components/Card';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import * as consultationService from '../../services/consultationService';
-import { Appointment, RootStackParamList, User } from '../../types';
+import { Appointment, StudentStackParamList } from '../../types';
 import { colors, spacing } from '../../utils/theme';
 
+type ConsultTab = 'chat' | 'appointment';
+
 export const ConsultationScreen: React.FC = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<StudentStackParamList>>();
+  const [tab, setTab] = useState<ConsultTab>('appointment');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [counsellors, setCounsellors] = useState<User[]>([]);
   const [details, setDetails] = useState('');
-  const [selectedCounsellor, setSelectedCounsellor] = useState<string>();
+  const [anonymousMode, setAnonymousMode] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
-    const [appts, couns] = await Promise.all([
-      consultationService.getAppointments(),
-      consultationService.getCounsellors(),
-    ]);
-    setAppointments(appts);
-    setCounsellors(couns);
-    if (couns.length && !selectedCounsellor) setSelectedCounsellor(couns[0]._id);
+    const data = await consultationService.getAppointments();
+    setAppointments(data);
   };
 
   useFocusEffect(
@@ -35,15 +32,14 @@ export const ConsultationScreen: React.FC = () => {
   );
 
   const book = async () => {
-    const counsellorId = selectedCounsellor || 'counsellor_001';
     try {
       setLoading(true);
       const datetime = new Date(Date.now() + 86400000).toISOString();
       await consultationService.createAppointment({
-        counsellor_user_id: counsellorId,
+        counsellor_user_id: 'counsellor_001',
         appointment_datetime: datetime,
         session_details: details,
-        is_anonymous: true,
+        is_anonymous: anonymousMode,
       });
       setDetails('');
       await load();
@@ -55,62 +51,87 @@ export const ConsultationScreen: React.FC = () => {
     }
   };
 
-  const counsellorName = (c: User | string) =>
-    typeof c === 'object' ? c.user_name : 'Counsellor';
+  const approved = appointments.filter((a) => a.status === 'approved' || a.status === 'pending');
 
   return (
     <ScreenContainer title="Consultation">
-      <Card>
-        <Text style={styles.label}>Book a session</Text>
-        {counsellors.map((c) => (
-          <PrimaryButton
-            key={c._id}
-            label={c.user_name + (selectedCounsellor === c._id ? ' ✓' : '')}
-            mode={selectedCounsellor === c._id ? 'contained' : 'outlined'}
-            onPress={() => setSelectedCounsellor(c._id)}
-          />
-        ))}
-        <TextInput
-          label="Session details"
-          value={details}
-          onChangeText={setDetails}
-          mode="outlined"
-          multiline
-          style={styles.input}
+      <View style={styles.tabs}>
+        <PrimaryButton
+          label="Chat"
+          mode={tab === 'chat' ? 'contained' : 'outlined'}
+          onPress={() => setTab('chat')}
         />
-        <PrimaryButton label="Request appointment" onPress={book} loading={loading} />
-      </Card>
-      <Text style={styles.section}>Your appointments</Text>
-      <FlatList
-        data={appointments}
-        keyExtractor={(item) => item._id}
-        scrollEnabled={false}
-        renderItem={({ item }) => (
+        <PrimaryButton
+          label="Appointment"
+          mode={tab === 'appointment' ? 'contained' : 'outlined'}
+          onPress={() => setTab('appointment')}
+        />
+      </View>
+
+      {tab === 'appointment' ? (
+        <Card>
+          <Text style={styles.label}>Book a counselling session</Text>
+          <TextInput
+            label="Session details"
+            value={details}
+            onChangeText={setDetails}
+            mode="outlined"
+            multiline
+            style={styles.input}
+          />
+          <PrimaryButton
+            label={anonymousMode ? 'Anonymous: ON' : 'Anonymous: OFF'}
+            mode="outlined"
+            onPress={() => setAnonymousMode((v) => !v)}
+          />
+          <PrimaryButton label="Request appointment" onPress={book} loading={loading} />
+        </Card>
+      ) : (
+        <>
           <Card>
-            <Text style={styles.status}>{item.status.toUpperCase()}</Text>
-            <Text>{new Date(item.appointment_datetime).toLocaleString()}</Text>
-            <Text style={styles.muted}>With {counsellorName(item.counsellor_user_id)}</Text>
+            <Text style={styles.label}>Anonymous mode (display only)</Text>
             <PrimaryButton
-              label="Open chat"
-              onPress={() =>
-                navigation.navigate('Chat', {
-                  appointmentId: item._id,
-                  title: 'Counselling chat',
-                })
-              }
+              label={anonymousMode ? 'Anonymous browsing: ON' : 'Anonymous browsing: OFF'}
+              mode="outlined"
+              onPress={() => setAnonymousMode((v) => !v)}
             />
+            <Text style={styles.hint}>
+              When ON, your name is hidden in chat — counsellor still sees session type.
+            </Text>
           </Card>
-        )}
-        ListEmptyComponent={<Text style={styles.muted}>No appointments yet.</Text>}
-      />
+          <FlatList
+            data={approved}
+            keyExtractor={(i) => i._id}
+            scrollEnabled={false}
+            renderItem={({ item }) => (
+              <Card>
+                <Text style={styles.status}>{item.status.toUpperCase()}</Text>
+                <Text>{new Date(item.appointment_datetime).toLocaleString()}</Text>
+                <PrimaryButton
+                  label="Open chat"
+                  onPress={() =>
+                    navigation.navigate('Chat', {
+                      appointmentId: item._id,
+                      title: 'Counselling chat',
+                      isAnonymous: anonymousMode,
+                    })
+                  }
+                />
+              </Card>
+            )}
+            ListEmptyComponent={<Text style={styles.muted}>Book an appointment to start chatting.</Text>}
+          />
+        </>
+      )}
     </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
+  tabs: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   label: { fontWeight: '700', marginBottom: spacing.sm, color: colors.text },
-  input: { marginVertical: spacing.sm, backgroundColor: colors.surface },
-  section: { fontWeight: '700', fontSize: 16, marginBottom: spacing.sm, color: colors.text },
+  input: { marginBottom: spacing.sm, backgroundColor: colors.surface },
+  hint: { fontSize: 12, color: colors.textMuted, marginTop: spacing.sm },
   status: { color: colors.primary, fontWeight: '700' },
-  muted: { color: colors.textMuted, marginTop: 4 },
+  muted: { color: colors.textMuted, textAlign: 'center', marginTop: spacing.lg },
 });

@@ -1,4 +1,16 @@
+export type AppRole = 'counsellor' | 'student1' | 'student2';
+
 export type UserRole = 'student' | 'counsellor';
+
+export interface RoleProfile {
+  userId: string;
+  user_name: string;
+  anonymous_name?: string;
+  faculty?: string;
+  profile_picture?: string;
+  displayTitle?: string;
+  specialization?: string;
+}
 
 export interface User {
   _id: string;
@@ -25,6 +37,20 @@ export interface MoodAnalytics {
   entries: MoodEntry[];
   averages: { mood: number; stress: number };
   topStressCauses: { cause: string; count: number }[];
+  trend: { date: string; mood_level: number; stress_level: number }[];
+}
+
+export interface CounsellorAnalytics {
+  studentCount: number;
+  totalEntries: number;
+  averages: { mood: number; stress: number };
+  topStressCauses: { cause: string; count: number }[];
+  studentWellbeing: {
+    studentId: string;
+    entryCount: number;
+    avgStress: number;
+    avgMood: number;
+  }[];
   trend: { date: string; mood_level: number; stress_level: number }[];
 }
 
@@ -88,20 +114,41 @@ export interface Notification {
 
 export type MoodLabel = 'Stressed' | 'Anxious' | 'Calm' | 'Okay' | 'Happy';
 
-export type RootTabParamList = {
+export type StudentTabParamList = {
   Mood: undefined;
   PeerSupport: undefined;
   Journal: undefined;
   Consultation: undefined;
   Insights: undefined;
+  Profile: undefined;
 };
 
-export type RootStackParamList = {
-  Main: undefined;
+export type CounsellorTabParamList = {
+  Home: undefined;
+  ExpertInsights: undefined;
+  Messages: undefined;
+  Insights: undefined;
+  Profile: undefined;
+};
+
+export type StudentStackParamList = {
+  StudentTabs: undefined;
   Settings: undefined;
   Notifications: undefined;
   MoodCheckIn: undefined;
   StressCauses: { moodLevel: number; stressLevel: number };
   JournalEditor: { journalId?: string };
-  Chat: { appointmentId: string; title: string };
+  Chat: { appointmentId: string; title: string; isAnonymous?: boolean };
+};
+
+export type CounsellorStackParamList = {
+  CounsellorTabs: undefined;
+  Settings: undefined;
+  Chat: { appointmentId: string; title: string; isAnonymous?: boolean };
+};
+
+export type RootStackParamList = {
+  RoleSelect: undefined;
+  StudentRoot: undefined;
+  CounsellorRoot: undefined;
 };

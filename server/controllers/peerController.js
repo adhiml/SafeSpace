@@ -2,7 +2,6 @@ const PeerPost = require('../models/PeerPost');
 const PeerComment = require('../models/PeerComment');
 const { analyzeSentiment } = require('../services/sentimentService');
 const asyncHandler = require('../utils/asyncHandler');
-const { CURRENT_USER_ID } = require('../utils/currentUser');
 
 const createPost = asyncHandler(async (req, res) => {
   const { content, tags } = req.body;
@@ -10,14 +9,12 @@ const createPost = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('content is required');
   }
-
   const post = await PeerPost.create({
-    user_id: CURRENT_USER_ID,
+    user_id: req.demoUserId,
     content,
     tags: tags || [],
     sentiment_score: analyzeSentiment(content),
   });
-
   const populated = await PeerPost.findById(post._id).populate('user_id', 'anonymous_name user_name');
   res.status(201).json(populated);
 });
@@ -49,19 +46,11 @@ const createComment = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('post_id and content are required');
   }
-
-  const post = await PeerPost.findById(post_id);
-  if (!post) {
-    res.status(404);
-    throw new Error('Post not found');
-  }
-
   const comment = await PeerComment.create({
     post_id,
-    user_id: CURRENT_USER_ID,
+    user_id: req.demoUserId,
     content,
   });
-
   const populated = await PeerComment.findById(comment._id).populate(
     'user_id',
     'anonymous_name user_name'

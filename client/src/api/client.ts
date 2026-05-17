@@ -1,10 +1,16 @@
 import axios from 'axios';
+import { getActiveDemoUserId } from './demoUserId';
 import { resolveApiBaseUrl, apiConnectionHint } from '../utils/apiConfig';
 
 const api = axios.create({
   baseURL: resolveApiBaseUrl(),
   timeout: 5000,
   headers: { 'Content-Type': 'application/json' },
+});
+
+api.interceptors.request.use((config) => {
+  config.headers['X-Demo-User-Id'] = getActiveDemoUserId();
+  return config;
 });
 
 api.interceptors.response.use(

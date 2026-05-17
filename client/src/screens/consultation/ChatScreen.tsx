@@ -5,16 +5,19 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
+import { useRole } from '../../context/RoleContext';
 import * as consultationService from '../../services/consultationService';
-import { ChatMessage, RootStackParamList, User } from '../../types';
+import { ChatMessage, CounsellorStackParamList, StudentStackParamList, User } from '../../types';
 import { colors, spacing } from '../../utils/theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
-
-const senderName = (u: User | string) => (typeof u === 'object' ? u.user_name : 'User');
+type Props = NativeStackScreenProps<
+  StudentStackParamList & CounsellorStackParamList,
+  'Chat'
+>;
 
 export const ChatScreen: React.FC<Props> = ({ route }) => {
-  const { appointmentId } = route.params;
+  const { appointmentId, isAnonymous } = route.params;
+  const { profile, userId, isCounsellor } = useRole();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState('');
 
@@ -28,6 +31,24 @@ export const ChatScreen: React.FC<Props> = ({ route }) => {
       load().catch(() => undefined);
     }, [appointmentId])
   );
+
+  const senderLabel = (msg: ChatMessage) => {
+    const sender = msg.sender_id;
+    const senderId = typeof sender === 'object' ? sender._id : sender;
+    const isMe = senderId === userId;
+
+    if (isMe) {
+      if (!isCounsellor && isAnonymous) return profile?.anonymous_name || 'Anonymous';
+      if (isCounsellor) return `${profile?.displayTitle || 'Dr.'} ${profile?.user_name}`;
+      return profile?.user_name || 'You';
+    }
+
+    if (typeof sender === 'object') {
+      if (isCounsellor && isAnonymous) return 'Anonymous student';
+      return (sender as User).user_name;
+    }
+    return 'User';
+  };
 
   const send = async () => {
     if (!text.trim()) return;
@@ -49,13 +70,19 @@ export const ChatScreen: React.FC<Props> = ({ route }) => {
           style={styles.list}
           renderItem={({ item }) => (
             <View style={styles.bubble}>
-              <Text style={styles.sender}>{senderName(item.sender_id)}</Text>
+              <Text style={styles.sender}>{senderLabel(item)}</Text>
               <Text>{item.message}</Text>
             </View>
           )}
         />
         <View style={styles.composer}>
-          <TextInput value={text} onChangeText={setText} mode="outlined" placeholder="Type a message" style={styles.input} />
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            mode="outlined"
+            placeholder="Type a message"
+            style={styles.input}
+          />
           <PrimaryButton label="Send" onPress={send} />
         </View>
       </KeyboardAvoidingView>

@@ -5,17 +5,16 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MoodSelectorBar } from '../../components/MoodSelectorBar';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
-import { RootStackParamList } from '../../types';
+import { StudentStackParamList } from '../../types';
 import { colors, spacing } from '../../utils/theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MoodCheckIn'>;
+type Props = NativeStackScreenProps<StudentStackParamList, 'MoodCheckIn'>;
 
 export const MoodCheckInScreen: React.FC<Props> = ({ navigation }) => {
   const [moodLevel, setMoodLevel] = useState<number>();
 
   const continueFlow = () => {
     if (!moodLevel) return;
-    // Map mood to default stress (inverse correlation for demo)
     const stressLevel = Math.max(1, 6 - moodLevel);
     navigation.replace('StressCauses', { moodLevel, stressLevel });
   };

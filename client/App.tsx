@@ -5,6 +5,7 @@ import { Provider as PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { MoodProvider } from './src/context/MoodContext';
+import { RoleProvider } from './src/context/RoleContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { colors } from './src/utils/theme';
 
@@ -23,12 +24,14 @@ export default function App() {
     <ErrorBoundary>
       <SafeAreaProvider style={styles.root}>
         <PaperProvider theme={theme}>
-          <MoodProvider>
-            <View style={styles.root}>
-              <RootNavigator />
-            </View>
-            <StatusBar style="dark" />
-          </MoodProvider>
+          <RoleProvider>
+            <MoodProvider>
+              <View style={styles.root}>
+                <RootNavigator />
+              </View>
+              <StatusBar style="dark" />
+            </MoodProvider>
+          </RoleProvider>
         </PaperProvider>
       </SafeAreaProvider>
     </ErrorBoundary>

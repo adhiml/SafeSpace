@@ -12,12 +12,20 @@ export const getAppointments = async () => {
 };
 
 export const createAppointment = async (payload: {
-  counsellor_user_id: string;
+  counsellor_user_id?: string;
   appointment_datetime: string;
   session_details?: string;
   is_anonymous?: boolean;
 }) => {
   const { data } = await api.post<Appointment>('/appointments', payload);
+  return data;
+};
+
+export const updateAppointmentStatus = async (
+  id: string,
+  status: Appointment['status']
+) => {
+  const { data } = await api.patch<Appointment>(`/appointments/${id}/status`, { status });
   return data;
 };
 

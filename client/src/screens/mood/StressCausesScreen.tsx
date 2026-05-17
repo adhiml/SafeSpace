@@ -6,11 +6,11 @@ import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { useMood } from '../../context/MoodContext';
 import * as moodService from '../../services/moodService';
-import { RootStackParamList } from '../../types';
+import { StudentStackParamList } from '../../types';
 import { STRESS_CAUSES } from '../../utils/constants';
 import { colors, radius, spacing } from '../../utils/theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'StressCauses'>;
+type Props = NativeStackScreenProps<StudentStackParamList, 'StressCauses'>;
 
 export const StressCausesScreen: React.FC<Props> = ({ navigation, route }) => {
   const { moodLevel, stressLevel } = route.params;
@@ -34,7 +34,7 @@ export const StressCausesScreen: React.FC<Props> = ({ navigation, route }) => {
       });
       setLatestMood(entry);
       setNeedsCheckIn(false);
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+      navigation.reset({ index: 0, routes: [{ name: 'StudentTabs' }] });
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Could not save');
     } finally {
@@ -69,7 +69,7 @@ export const StressCausesScreen: React.FC<Props> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   heading: { fontSize: 22, fontWeight: '700', color: colors.text },
   sub: { color: colors.textMuted, marginBottom: spacing.md },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.lg },
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -77,6 +77,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm,
   },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { color: colors.text, fontSize: 13 },
