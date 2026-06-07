@@ -1,3 +1,4 @@
+// handles backend data
 export type AppRole = 'counsellor' | 'student1' | 'student2';
 
 export type UserRole = 'student' | 'counsellor';
@@ -34,24 +35,61 @@ export interface MoodEntry {
 }
 
 export interface MoodAnalytics {
-  entries: MoodEntry[];
-  averages: { mood: number; stress: number };
-  topStressCauses: { cause: string; count: number }[];
-  trend: { date: string; mood_level: number; stress_level: number }[];
+  trend: {
+    date: string;
+    mood: number;
+    stress: number;
+    causes: Record<string, number>;
+  }[];
+  weekly: {
+    weekStart: string;
+    avgMood: number;
+    avgStress: number;
+    causes: Record<string, number>;
+  }[];
+  monthly: {
+    month: string;
+    avgMood: number;
+    avgStress: number;
+    causes: Record<string, number>;
+  }[];
 }
+
+// export interface CounsellorAnalytics {
+//   studentCount: number;
+//   totalEntries: number;
+//   averages: { mood: number; stress: number };
+//   topStressCauses: { cause: string; count: number }[];
+//   studentWellbeing: {
+//     studentId: string;
+//     entryCount: number;
+//     avgStress: number;
+//     avgMood: number;
+//   }[];
+//   trend: { date: string; mood_level: number; stress_level: number }[];
+// }
 
 export interface CounsellorAnalytics {
   studentCount: number;
   totalEntries: number;
-  averages: { mood: number; stress: number };
-  topStressCauses: { cause: string; count: number }[];
-  studentWellbeing: {
-    studentId: string;
-    entryCount: number;
-    avgStress: number;
-    avgMood: number;
+  daily: {
+    date: string;
+    mood: number;
+    stress: number;
+    causes: Record<string, number>;
   }[];
-  trend: { date: string; mood_level: number; stress_level: number }[];
+  weekly: {
+    weekStart: string;
+    avgMood: number;
+    avgStress: number;
+    causes: Record<string, number>;
+  }[];
+  monthly: {
+    month: string;
+    avgMood: number;
+    avgStress: number;
+    causes: Record<string, number>;
+  }[];
 }
 
 export interface Journal {
