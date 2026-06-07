@@ -8,3 +8,4 @@ export const SettingsWrapper: React.FC = () => {
   const handleSwitch = (role: AppRole) => switchRole(role);
   return <SettingsScreen onSwitchRole={handleSwitch} />;
 };
+

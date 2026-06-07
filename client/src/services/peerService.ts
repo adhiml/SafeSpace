@@ -15,8 +15,3 @@ export const meTooPost = async (postId: string) => {
   const { data } = await api.post<PeerPost>(`/posts/${postId}/me-too`);
   return data;
 };
-
-export const createComment = async (post_id: string, content: string) => {
-  const { data } = await api.post<PeerComment>('/comments', { post_id, content });
-  return data;
-};

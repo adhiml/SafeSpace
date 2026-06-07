@@ -13,6 +13,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// api.interceptors.request.use((config) => {
+//   const token = getAuthToken();
+
+//   if (token) {
+//     config.headers.Authorization = `Bearer ${token}`;
+//   } else {
+//     config.headers['X-Demo-User-Id'] = getActiveDemoUserId();
+//   }
+
+//   return config;
+// });
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {

@@ -7,7 +7,6 @@ import { CounsellorHomeScreen } from '../screens/counsellor/CounsellorHomeScreen
 import { ExpertInsightsScreen } from '../screens/counsellor/ExpertInsightsScreen';
 import { CounsellorMessagesScreen } from '../screens/counsellor/CounsellorMessagesScreen';
 import { CounsellorInsightsScreen } from '../screens/counsellor/CounsellorInsightsScreen';
-import { CounsellorProfileWrapper } from '../screens/shared/CounsellorProfileWrapper';
 import { CounsellorTabParamList } from '../types';
 import { colors, radius, spacing } from '../utils/theme';
 
@@ -16,9 +15,8 @@ const Tab = createBottomTabNavigator<CounsellorTabParamList>();
 const icons: Record<keyof CounsellorTabParamList, keyof typeof Ionicons.glyphMap> = {
   Home: 'home-outline',
   ExpertInsights: 'bulb-outline',
-  Messages: 'mail-outline',
+  Chat: 'mail-outline',
   Insights: 'stats-chart-outline',
-  Profile: 'person-outline',
 };
 
 export const CounsellorTabNavigator: React.FC = () => (
@@ -39,23 +37,20 @@ export const CounsellorTabNavigator: React.FC = () => (
   >
     <Tab.Screen name="Home" component={CounsellorHomeScreen} />
     <Tab.Screen name="ExpertInsights" component={ExpertInsightsScreen} options={{ tabBarLabel: 'Expert' }} />
-    <Tab.Screen name="Messages" component={CounsellorMessagesScreen} />
+    <Tab.Screen name="Chat" component={CounsellorMessagesScreen} />
     <Tab.Screen name="Insights" component={CounsellorInsightsScreen} />
-    <Tab.Screen name="Profile" component={CounsellorProfileWrapper} />
   </Tab.Navigator>
 );
 
 const styles = StyleSheet.create({
   tabBar: {
-    position: 'absolute',
+    position: 'relative',
     left: spacing.md,
     right: spacing.md,
-    bottom: spacing.md,
     height: 64,
-    borderRadius: radius.lg,
+    borderRadius: radius.sm,
     backgroundColor: colors.surface,
     borderTopWidth: 0,
-    elevation: 8,
   },
   tabLabel: { fontSize: 10, fontWeight: '600' },
   dot: { fontSize: 6, color: colors.secondary, position: 'absolute', top: -4 },

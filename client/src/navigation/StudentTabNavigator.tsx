@@ -8,19 +8,17 @@ import { PeerSupportScreen } from '../screens/peer/PeerSupportScreen';
 import { JournalScreen } from '../screens/journal/JournalScreen';
 import { ConsultationScreen } from '../screens/consultation/ConsultationScreen';
 import { InsightsScreen } from '../screens/insights/InsightsScreen';
-import { StudentProfileWrapper } from '../screens/shared/StudentProfileWrapper';
 import { StudentTabParamList } from '../types';
 import { colors, radius, spacing } from '../utils/theme';
 
 const Tab = createBottomTabNavigator<StudentTabParamList>();
 
 const icons: Record<keyof StudentTabParamList, keyof typeof Ionicons.glyphMap> = {
-  Mood: 'happy-outline',
+  Home: 'happy-outline',
   PeerSupport: 'people-outline',
   Journal: 'book-outline',
   Consultation: 'chatbubbles-outline',
   Insights: 'stats-chart-outline',
-  Profile: 'person-outline',
 };
 
 export const StudentTabNavigator: React.FC = () => (
@@ -39,26 +37,23 @@ export const StudentTabNavigator: React.FC = () => (
       tabBarLabelStyle: styles.tabLabel,
     })}
   >
-    <Tab.Screen name="Mood" component={MoodHomeScreen} />
+    <Tab.Screen name="Home" component={MoodHomeScreen} />
     <Tab.Screen name="PeerSupport" component={PeerSupportScreen} options={{ tabBarLabel: 'Peer' }} />
     <Tab.Screen name="Journal" component={JournalScreen} />
     <Tab.Screen name="Consultation" component={ConsultationScreen} options={{ tabBarLabel: 'Consult' }} />
     <Tab.Screen name="Insights" component={InsightsScreen} />
-    <Tab.Screen name="Profile" component={StudentProfileWrapper} />
   </Tab.Navigator>
 );
 
 const styles = StyleSheet.create({
   tabBar: {
-    position: 'absolute',
+    position: 'relative',
     left: spacing.md,
     right: spacing.md,
-    bottom: spacing.md,
     height: 64,
-    borderRadius: radius.lg,
+    borderRadius: radius.sm,
     backgroundColor: colors.surface,
     borderTopWidth: 0,
-    elevation: 8,
   },
   tabLabel: { fontSize: 10, fontWeight: '600' },
   dot: { fontSize: 6, color: colors.secondary, position: 'absolute', top: -4 },

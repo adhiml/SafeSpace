@@ -24,7 +24,7 @@ export const MoodCheckInScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.center}>
         <Text style={styles.heading}>How are you feeling right now?</Text>
         <Text style={styles.sub}>Tap the mood that best describes you today.</Text>
-        <MoodSelectorBar selectedLevel={moodLevel} onSelect={setMoodLevel} />
+        <MoodSelectorBar selectedLevel={moodLevel} onSelect={setMoodLevel} variant= {"entry"} />
         <PrimaryButton label="Continue" onPress={continueFlow} />
       </View>
     </ScreenContainer>

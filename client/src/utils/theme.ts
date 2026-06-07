@@ -1,19 +1,29 @@
 export const colors = {
-  primary: '#4A90D9',
-  primaryLight: '#E8F2FC',
-  secondary: '#5CB88F',
-  secondaryLight: '#E8F7EF',
-  background: '#F5F9FC',
-  surface: '#FFFFFF',
-  text: '#2C3E50',
-  textMuted: '#7F8C9A',
-  border: '#E2ECF4',
-  stressed: '#E57373',
-  anxious: '#FFB74D',
-  calm: '#81C784',
-  okay: '#64B5F6',
-  happy: '#5CB88F',
-  shadow: 'rgba(74, 144, 217, 0.12)',
+
+  primary: '#4B2E2A',        
+  primaryLight: '#E8D5C4',   
+
+  secondary: '#8B5E3C',      
+  secondaryLight: '#F1E6DA', 
+
+  background: '#FAF6F1',     // warm cream (latte foam base)
+  surface: '#FFFFFF',        // clean foam white
+
+  // Text (mocha tones)
+  text: '#2F1F1D',           // deep mocha (softer than black)
+  textMuted: '#7A6A63',      // latte brown
+
+  border: '#FAF6F1',        // soft coffee foam border
+
+  // Mood colors (coffee-inspired emotional tones)
+  stressed: '#F1BABF',      // burnt caramel blush
+  anxious: '#E8C07D',       // cappuccino beige
+  okay: '#BFD7EA',         // neutral latte grey-brown
+  calm: '#C3D8C1',         // soft matcha latte green
+  happy: '#F9E3E9',        // vanilla cream
+
+  // Depth
+  shadow: 'rgba(47, 31, 29, 0.12)',
 };
 
 export const spacing = {

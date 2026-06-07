@@ -13,7 +13,7 @@ import * as moodService from '../../services/moodService';
 import { MoodEntry, StudentStackParamList } from '../../types';
 import { MOOD_COLORS, MOOD_LABELS } from '../../utils/constants';
 import { getRecommendations } from '../../utils/recommendations';
-import { colors, spacing } from '../../utils/theme';
+import { colors, spacing } from '../../utils/theme'; 
 
 export const MoodHomeScreen: React.FC = () => {
   const { profile } = useRole();
@@ -62,12 +62,12 @@ export const MoodHomeScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      <Card>
-        <Text style={styles.sectionTitle}>Today's mood</Text>
+      <Card style={styles.card}>
+        <Text style={styles.sectionTitle}>Current's mood</Text>
         <Text style={styles.currentMood}>
           {MOOD_LABELS[currentLevel]} {updating ? '(saving...)' : ''}
         </Text>
-        <MoodSelectorBar selectedLevel={currentLevel} onSelect={handleMoodSelect} />
+        <MoodSelectorBar selectedLevel={currentLevel} onSelect={handleMoodSelect} variant={"home"}/>
       </Card>
 
       <Text style={styles.sectionTitle}>Recommendations for you</Text>
@@ -94,11 +94,12 @@ export const MoodHomeScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  card:{maxHeight: 200},
   welcomeRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.md },
   welcome: { fontSize: 22, color: colors.text, fontWeight: '500' },
-  nameLink: { fontSize: 22, color: colors.primary, fontWeight: '700', textDecorationLine: 'underline' },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
-  currentMood: { fontSize: 14, color: colors.textMuted, marginBottom: spacing.sm },
+  nameLink: { fontSize: 22, color: colors.primary, fontWeight: '700'},
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: spacing.xs },
+  currentMood: { fontSize: 14, color: colors.textMuted},
   historyTitle: { marginTop: spacing.lg },
   historyRow: {
     flexDirection: 'row',

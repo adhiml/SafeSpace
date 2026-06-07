@@ -61,6 +61,7 @@ export interface Journal {
   content: string;
   is_sentiment_enabled: boolean;
   sentiment_score: number;
+  tags: string[];
   created_at: string;
   updated_at: string;
 }
@@ -115,25 +116,24 @@ export interface Notification {
 export type MoodLabel = 'Stressed' | 'Anxious' | 'Calm' | 'Okay' | 'Happy';
 
 export type StudentTabParamList = {
-  Mood: undefined;
+  Home: undefined;
   PeerSupport: undefined;
   Journal: undefined;
   Consultation: undefined;
   Insights: undefined;
-  Profile: undefined;
 };
 
 export type CounsellorTabParamList = {
   Home: undefined;
   ExpertInsights: undefined;
-  Messages: undefined;
+  Chat: undefined;
   Insights: undefined;
-  Profile: undefined;
 };
 
 export type StudentStackParamList = {
   StudentTabs: undefined;
   Settings: undefined;
+  Profile: undefined;
   Notifications: undefined;
   MoodCheckIn: undefined;
   StressCauses: { moodLevel: number; stressLevel: number };
@@ -144,6 +144,15 @@ export type StudentStackParamList = {
 export type CounsellorStackParamList = {
   CounsellorTabs: undefined;
   Settings: undefined;
+  Profile: undefined;
+  Notifications: undefined;
+  Chat: { appointmentId: string; title: string; isAnonymous?: boolean };
+};
+
+export type SharedStackParamList = {
+  Profile: undefined;
+  Settings: undefined;
+  Notifications: undefined;
   Chat: { appointmentId: string; title: string; isAnonymous?: boolean };
 };
 

@@ -56,13 +56,15 @@ export const CounsellorMessagesScreen: React.FC = () => {
             <Text style={styles.muted}>{a.status} · {new Date(a.appointment_datetime).toLocaleDateString()}</Text>
             <PrimaryButton
               label="Open chat"
-              onPress={() =>
-                navigation.navigate('Chat', {
+              onPress={() => {
+                console.log("Counselor open chat button pressed");
+                console.log("ID checking:", a._id);
+                navigation.getParent()?.navigate('Chat', {
                   appointmentId: a._id,
                   title: a.is_anonymous ? 'Anonymous chat' : 'Student chat',
                   isAnonymous: a.is_anonymous,
                 })
-              }
+              }}
             />
           </Card>
         ))

@@ -5,9 +5,11 @@ import { Card } from '../../components/Card';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { SwitchRoleModal } from '../../components/SwitchRoleModal';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getRoleLabel } from '../../constants/roleUsers';
 import { useRole } from '../../context/RoleContext';
-import { AppRole } from '../../types';
+import { AppRole,SharedStackParamList} from '../../types';
 import { colors, spacing } from '../../utils/theme';
 
 interface SettingsScreenProps {
@@ -17,6 +19,8 @@ interface SettingsScreenProps {
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSwitchRole }) => {
   const { role, profile, isCounsellor } = useRole();
   const [modalVisible, setModalVisible] = useState(false);
+  type NavigationProp = NativeStackNavigationProp<SharedStackParamList>;
+  const navigation = useNavigation<NavigationProp>();
 
   if (!role || !profile) return null;
 
@@ -33,9 +37,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSwitchRole }) 
         <Text style={styles.value}>{name}</Text>
         <Text style={styles.label}>User ID</Text>
         <Text style={styles.value}>{profile.userId}</Text>
+        <PrimaryButton label="Edit Profile" onPress={() =>  {navigation.navigate('Profile')}} />
       </Card>
       <PrimaryButton label="Switch role" onPress={() => setModalVisible(true)} />
-      <SwitchRoleModal
+      <SwitchRoleModal 
         visible={modalVisible}
         currentRole={role}
         onClose={() => setModalVisible(false)}

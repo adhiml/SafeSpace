@@ -3,8 +3,8 @@ import { StyleSheet, View, ViewStyle } from 'react-native';
 import { colors, radius, spacing } from '../utils/theme';
 
 interface CardProps {
-  children: React.ReactNode;
-  style?: ViewStyle;
+  children: React.ReactNode; // whatever i put inside <Card>...</Card>
+  style?: ViewStyle; // optional styling
 }
 
 export const Card: React.FC<CardProps> = ({ children, style }) => (
@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
-    shadowRadius: 10,
+    shadowRadius: 15,
     elevation: 3,
   },
 });

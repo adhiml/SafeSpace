@@ -5,6 +5,7 @@ export const createJournal = async (payload: {
   title: string;
   content: string;
   is_sentiment_enabled?: boolean;
+  tags: string[];
 }) => {
   const { data } = await api.post<Journal>('/journals', payload);
   return data;
@@ -17,7 +18,7 @@ export const getJournals = async () => {
 
 export const updateJournal = async (
   id: string,
-  payload: Partial<{ title: string; content: string; is_sentiment_enabled: boolean }>
+  payload: Partial<{ title: string; content: string; is_sentiment_enabled: boolean, tags: string[] }>
 ) => {
   const { data } = await api.put<Journal>(`/journals/${id}`, payload);
   return data;

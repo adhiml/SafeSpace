@@ -6,9 +6,12 @@ import { JournalEditorScreen } from '../screens/journal/JournalEditorScreen';
 import { MoodCheckInScreen } from '../screens/mood/MoodCheckInScreen';
 import { StressCausesScreen } from '../screens/mood/StressCausesScreen';
 import { SettingsWrapper } from '../screens/shared/SettingsWrapper';
-import { NotificationsScreen } from '../screens/settings/NotificationsScreen';
+import { NotificationsScreen } from '../screens/notification/NotificationsScreen';
 import { StudentStackParamList } from '../types';
 import { StudentTabNavigator } from './StudentTabNavigator';
+import { ProfileScreen } from '../screens/shared/ProfileScreen';
+
+// this code tell "stack" what can go in it, not the sequence
 
 const Stack = createNativeStackNavigator<StudentStackParamList>();
 
@@ -28,6 +31,7 @@ export const StudentStackNavigator: React.FC = () => {
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="JournalEditor" component={JournalEditorScreen} />
       <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
     </Stack.Navigator>
   );
 };

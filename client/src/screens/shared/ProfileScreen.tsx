@@ -4,18 +4,12 @@ import { Text, TextInput } from 'react-native-paper';
 import { Card } from '../../components/Card';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
-import { SwitchRoleModal } from '../../components/SwitchRoleModal';
 import { useRole } from '../../context/RoleContext';
 import { AppRole } from '../../types';
 import { colors, spacing } from '../../utils/theme';
 
-interface ProfileScreenProps {
-  onSwitchRole: (role: AppRole) => void;
-}
-
-export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onSwitchRole }) => {
+export const ProfileScreen: React.FC = () => {
   const { role, profile, isCounsellor, updateProfile } = useRole();
-  const [modalVisible, setModalVisible] = useState(false);
 
   if (!profile || !role) return null;
 
@@ -70,16 +64,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onSwitchRole }) =>
         )}
         <Text style={styles.preview}>Preview: {displayName}</Text>
       </Card>
-      <PrimaryButton label="Switch role (dev)" onPress={() => setModalVisible(true)} mode="outlined" />
-      <SwitchRoleModal
-        visible={modalVisible}
-        currentRole={role}
-        onClose={() => setModalVisible(false)}
-        onSelect={(r) => {
-          setModalVisible(false);
-          onSwitchRole(r);
-        }}
-      />
     </ScreenContainer>
   );
 };

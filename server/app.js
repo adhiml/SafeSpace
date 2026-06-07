@@ -31,8 +31,10 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
-app.listen(PORT, HOST, () =>
-  console.log(`SafeSpace server running at http://localhost:${PORT}`)
-);
+app.listen(PORT, HOST, () => {
+  console.log(`SafeSpace server running`);
+  console.log(`Local: http://localhost:${PORT}`);
+  console.log(`Network: http://10.178.127.225:${PORT}`);
+});
 
 module.exports = app;

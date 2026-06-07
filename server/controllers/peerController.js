@@ -1,5 +1,5 @@
 const PeerPost = require('../models/PeerPost');
-const PeerComment = require('../models/PeerComment');
+// const PeerComment = require('../models/PeerComment');
 const { analyzeSentiment } = require('../services/sentimentService');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -40,22 +40,23 @@ const meTooPost = asyncHandler(async (req, res) => {
   res.json(post);
 });
 
-const createComment = asyncHandler(async (req, res) => {
-  const { post_id, content } = req.body;
-  if (!post_id || !content) {
-    res.status(400);
-    throw new Error('post_id and content are required');
-  }
-  const comment = await PeerComment.create({
-    post_id,
-    user_id: req.demoUserId,
-    content,
-  });
-  const populated = await PeerComment.findById(comment._id).populate(
-    'user_id',
-    'anonymous_name user_name'
-  );
-  res.status(201).json(populated);
-});
+// const createComment = asyncHandler(async (req, res) => {
+//   const { post_id, content } = req.body;
+//   if (!post_id || !content) {
+//     res.status(400);
+//     throw new Error('post_id and content are required');
+//   }
+//   const comment = await PeerComment.create({
+//     post_id,
+//     user_id: req.demoUserId,
+//     content,
+//   });
+//   const populated = await PeerComment.findById(comment._id).populate(
+//     'user_id',
+//     'anonymous_name user_name'
+//   );
+//   res.status(201).json(populated);
+// });
 
-module.exports = { createPost, getPosts, meTooPost, createComment };
+// module.exports = { createPost, getPosts, meTooPost, createComment };
+module.exports = { createPost, getPosts, meTooPost };

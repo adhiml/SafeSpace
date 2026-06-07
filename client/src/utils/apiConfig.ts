@@ -6,8 +6,10 @@ const DEFAULT_PORT = 5000;
  * Resolves the API base URL for the current device.
  * `localhost` only works on web/iOS simulator — not on Android emulator or a physical phone.
  */
-export const resolveApiBaseUrl = (): string => {
+
+export const resolveApiBaseUrl = (): string => { // return the correct backend URL based on the platform and env variable
   const fromEnv = process.env.EXPO_PUBLIC_API_URL?.trim();
+  console.log("ENV VALUE:", fromEnv);
 
   if (fromEnv && !isLocalhost(fromEnv)) {
     return fromEnv.replace(/\/$/, '');
@@ -28,7 +30,7 @@ export const resolveApiBaseUrl = (): string => {
 const isLocalhost = (url: string) =>
   url.includes('localhost') || url.includes('127.0.0.1');
 
-export const apiConnectionHint = (): string => {
+export const apiConnectionHint = (): string => { // use to send error message
   if (Platform.OS === 'android') {
     return 'Android emulator: use http://10.0.2.2:5000/api. Physical phone: use your PC LAN IP in client/.env';
   }

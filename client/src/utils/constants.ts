@@ -9,19 +9,19 @@ export const MOOD_LABELS: Record<number, MoodLabel> = {
 };
 
 export const MOOD_COLORS: Record<number, string> = {
-  1: '#E57373',
-  2: '#FFB74D',
-  3: '#81C784',
-  4: '#64B5F6',
-  5: '#5CB88F',
+  1: '#F1BABF', // stressed
+  2: '#E8C07D', // anxious
+  3: '#BFD7EA', // okay
+  4: '#C3D8C1', // calm
+  5: '#F9E3E9', // happy
 };
 
-export const MOOD_EMOJIS: Record<number, string> = {
-  1: '😣',
-  2: '😰',
-  3: '😌',
-  4: '🙂',
-  5: '😊',
+export const MOOD_EMOJIS: Record<number, any> = {
+  1: require('../../assets/annoyed.png'),
+  2: require('../../assets/tired.png'),
+  3: require('../../assets/peaceful.png'),
+  4: require('../../assets/smiling.png'),
+  5: require('../../assets/laughing.png'),
 };
 
 export const STRESS_CAUSES = [

@@ -14,6 +14,7 @@ const createJournal = asyncHandler(async (req, res) => {
     content,
     is_sentiment_enabled: !!is_sentiment_enabled,
     sentiment_score: is_sentiment_enabled ? analyzeSentiment(content) : 0,
+    tags: req.body.tags || [],
   });
   res.status(201).json(journal);
 });
@@ -29,13 +30,24 @@ const updateJournal = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Journal not found');
   }
+  
   const { title, content, is_sentiment_enabled } = req.body;
+
   if (title) journal.title = title;
   if (content) journal.content = content;
-  if (is_sentiment_enabled !== undefined) journal.is_sentiment_enabled = is_sentiment_enabled;
+
+  if (req.body.tags) {
+    journal.tags = req.body.tags;
+  }
+
+  if (is_sentiment_enabled !== undefined) {
+    journal.is_sentiment_enabled = is_sentiment_enabled;
+  }
+  
   if (journal.is_sentiment_enabled && content) {
     journal.sentiment_score = analyzeSentiment(content);
   }
+  
   await journal.save();
   res.json(journal);
 });
