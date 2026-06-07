@@ -18,7 +18,7 @@ export const NotificationsScreen: React.FC = () => {
   );
 
   return (
-    <ScreenContainer title="Notifications">
+    <ScreenContainer title="Notifications" hideHeaderActions>
       <FlatList
         data={items}
         keyExtractor={(item) => item._id}

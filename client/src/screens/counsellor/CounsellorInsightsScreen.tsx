@@ -34,7 +34,8 @@ export const CounsellorInsightsScreen: React.FC = () => {
         </Card>
       ))}
 
-      <Text style={styles.section}>Student wellbeing (IDs only)</Text>
+      {/* specific student (anonymous) wellbeing scores and trends */}
+      {/* <Text style={styles.section}>Student wellbeing (IDs only)</Text>
       {data?.studentWellbeing.map((s) => (
         <View key={s.studentId} style={styles.row}>
           <Text style={styles.id}>Student {s.studentId.slice(-3)}</Text>
@@ -42,7 +43,7 @@ export const CounsellorInsightsScreen: React.FC = () => {
             Stress {s.avgStress.toFixed(1)} · Mood {s.avgMood.toFixed(1)} · {s.entryCount} logs
           </Text>
         </View>
-      ))}
+      ))} */}
     </ScreenContainer>
   );
 };

@@ -8,42 +8,39 @@ import { colors, radius, spacing } from '../utils/theme';
 interface UniversalHeaderProps {
   title: string;
   isHome?: boolean;
-  showActions?: boolean;
+  showActions?: boolean; // Add this line to your interface
 }
 
 export const UniversalHeader: React.FC<UniversalHeaderProps> = ({
   title,
   isHome = false,
-  showActions = true,
+  showActions = true, // Default to true if not provided
 }) => {
   const navigation = useNavigation();
   const displayTitle = isHome ? 'SafeSpace' : title;
 
-  const openSettings = () => {
-    const parent = navigation.getParent();
-    if (parent?.navigate) {
-      parent.navigate('Settings' as never);
-    }
-  };
-
-  const openNotifications = () => {
-    const parent = navigation.getParent();
-    if (parent?.navigate) {
-      parent.navigate('Notifications' as never);
-    }
-  };
-
   return (
     <View style={styles.container}>
-      <View style={styles.side} />
-      <Text style={styles.title}>{displayTitle}</Text>
+      {/* Left side: Show a back arrow only if we are NOT on a main tab */}
+      <View style={styles.side}>
+        {!showActions && navigation.canGoBack() && (
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color={colors.primary} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Center title: Always perfectly locked to center */}
+      <Text style={styles.title} numberOfLines={1}>{displayTitle}</Text>
+
+      {/* Right side: Show buttons only if we ARE on a main tab */}
       <View style={[styles.side, styles.actions]}>
         {showActions && (
           <>
-            <TouchableOpacity style={styles.iconBtn} onPress={openNotifications}>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Notifications' as never)}>
               <Ionicons name="notifications-outline" size={22} color={colors.primary} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} onPress={openSettings}>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Settings' as never)}>
               <Ionicons name="settings-outline" size={22} color={colors.primary} />
             </TouchableOpacity>
           </>
@@ -76,3 +73,4 @@ const styles = StyleSheet.create({
   },
   iconBtn: { padding: spacing.xs, marginLeft: spacing.xs },
 });
+

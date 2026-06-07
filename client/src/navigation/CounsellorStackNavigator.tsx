@@ -7,8 +7,8 @@ import { CounsellorTabNavigator } from './CounsellorTabNavigator';
 import { ProfileScreen } from '../screens/shared/ProfileScreen';
 import { NotificationsScreen } from '../screens/notification/NotificationsScreen';
 
-// stack is within one "tab" or "main tabs (inside tab navigator)"
-// it is for screens that are not in the main tab but can be navigated to from the main tab
+// // stack is within one "tab" or "main tabs (inside tab navigator)"
+// // it is for screens that are not in the main tab but can be navigated to from the main tab
 
 const Stack = createNativeStackNavigator<CounsellorStackParamList>();
 

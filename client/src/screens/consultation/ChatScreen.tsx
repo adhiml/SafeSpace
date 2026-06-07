@@ -58,7 +58,7 @@ export const ChatScreen: React.FC<Props> = ({ route }) => {
   };
 
   return (
-    <ScreenContainer title="Chat" scroll={false}>
+    <ScreenContainer title="Chat" scroll={false} hideHeaderActions>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

@@ -11,6 +11,7 @@ import { getRoleLabel } from '../../constants/roleUsers';
 import { useRole } from '../../context/RoleContext';
 import { AppRole,SharedStackParamList} from '../../types';
 import { colors, spacing } from '../../utils/theme';
+import { UniversalHeader } from '../../components/UniversalHeader';
 
 interface SettingsScreenProps {
   onSwitchRole: (role: AppRole) => void;
@@ -29,7 +30,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSwitchRole }) 
     : profile.user_name;
 
   return (
-    <ScreenContainer title="Settings">
+    <ScreenContainer title="Settings" hideHeaderActions>
       <Card>
         <Text style={styles.label}>Current role (dev)</Text>
         <Text style={styles.value}>{getRoleLabel(role)}</Text>

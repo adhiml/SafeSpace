@@ -18,7 +18,7 @@ export const ProfileScreen: React.FC = () => {
     : profile.user_name;
 
   return (
-    <ScreenContainer title="Profile">
+    <ScreenContainer title="Profile" hideHeaderActions>
       <Card>
         <Text style={styles.label}>Display name</Text>
         <TextInput
