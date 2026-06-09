@@ -34,7 +34,7 @@ const HOST = '0.0.0.0';
 app.listen(PORT, HOST, () => {
   console.log(`SafeSpace server running`);
   console.log(`Local: http://localhost:${PORT}`);
-  console.log(`Network: http://10.178.127.225:${PORT}`);
+  console.log(`Network: http://10.68.186.225:${PORT}`);
 });
 
 module.exports = app;

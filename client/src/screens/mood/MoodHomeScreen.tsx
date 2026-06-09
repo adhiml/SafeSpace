@@ -165,9 +165,6 @@ export const MoodHomeScreen: React.FC = () => {
       ) : (
         <WeeklyMoodChart
           analytics={analytics}
-          onViewDetails={() =>
-            navigation.navigate('MoodAnalytics' as any)
-          }
         />
       )}
 
