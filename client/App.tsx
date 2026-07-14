@@ -8,6 +8,7 @@ import { MoodProvider } from './src/context/MoodContext';
 import { RoleProvider } from './src/context/RoleContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { colors } from './src/utils/theme';
+import { Background } from './src/components/Background';
 
 const theme = {
   ...MD3LightTheme,
@@ -15,29 +16,24 @@ const theme = {
     ...MD3LightTheme.colors,
     primary: colors.primary,
     secondary: colors.secondary,
-    background: colors.background,
   },
 };
 
 export default function App() {
   return (
     <ErrorBoundary>
-      <SafeAreaProvider style={styles.root}>
+      <SafeAreaProvider>
         <PaperProvider theme={theme}>
-          <RoleProvider>
-            <MoodProvider>
-              <View style={styles.root}>
-                <RootNavigator />
-              </View>
-              <StatusBar style="dark" />
-            </MoodProvider>
-          </RoleProvider>
+          <Background>
+            <RoleProvider>
+              <MoodProvider>
+                  <RootNavigator />
+                <StatusBar style="dark" />
+              </MoodProvider>
+            </RoleProvider>
+          </Background>
         </PaperProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
-});

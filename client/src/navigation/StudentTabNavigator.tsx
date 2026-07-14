@@ -53,8 +53,7 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: radius.sm,
     backgroundColor: colors.surface,
-    borderTopWidth: 0,
   },
-  tabLabel: { fontSize: 10, fontWeight: '600' },
+  tabLabel: { fontSize: 11, fontWeight: '600' },
   dot: { fontSize: 6, color: colors.secondary, position: 'absolute', top: -4 },
 });

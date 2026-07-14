@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Image } from 'react-native';
 import { Text } from 'react-native-paper';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { MoodSelectorBar } from '../../components/MoodSelectorBar';
+import { MoodSelector } from '../../components/MoodSelector';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { StudentStackParamList } from '../../types';
@@ -24,7 +24,12 @@ export const MoodCheckInScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.center}>
         <Text style={styles.heading}>How are you feeling right now?</Text>
         <Text style={styles.sub}>Tap the mood that best describes you today.</Text>
-        <MoodSelectorBar selectedLevel={moodLevel} onSelect={setMoodLevel} variant= {"entry"} />
+        {/* <View style={{ width: '100%', alignItems:'center'}}>
+          <Image
+          source={require('../../assets/images/moodCheckIn.png')}
+          style={{ width: 350, height: 200}} />
+        </View> */}
+        <MoodSelector selectedLevel={moodLevel} onSelect={setMoodLevel} variant={"entry"} />
         <PrimaryButton label="Continue" onPress={continueFlow} />
       </View>
     </ScreenContainer>
@@ -32,7 +37,20 @@ export const MoodCheckInScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center' },
-  heading: { fontSize: 24, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
-  sub: { fontSize: 14, color: colors.textMuted, marginBottom: spacing.lg },
+  center: {
+    flex: 1,
+    gap: 20,
+    justifyContent:'center'
+  },
+  heading: {
+    fontSize: 30,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  sub: {
+    fontSize: 16,
+    color: colors.textMuted,
+    marginBottom:5,
+    fontWeight: '500',
+  },
 });

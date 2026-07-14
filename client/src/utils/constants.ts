@@ -3,25 +3,33 @@ import { MoodLabel } from '../types';
 export const MOOD_LABELS: Record<number, MoodLabel> = {
   1: 'Stressed',
   2: 'Anxious',
-  3: 'Calm',
-  4: 'Okay',
+  3: 'Neutral',
+  4: 'Calm',
   5: 'Happy',
 };
 
 export const MOOD_COLORS: Record<number, string> = {
-  1: '#F1BABF', // stressed
-  2: '#E8C07D', // anxious
-  3: '#BFD7EA', // okay
-  4: '#C3D8C1', // calm
-  5: '#F9E3E9', // happy
+  1: '#fedde0', // stressed
+  2: '#f8fad4', // anxious
+  3: '#e5fbfc', // neutral
+  4: '#edfdec', // calm
+  5: '#f1eefd', // happy
 };
 
-export const MOOD_EMOJIS: Record<number, any> = {
-  1: require('../../assets/annoyed.png'),
-  2: require('../../assets/tired.png'),
-  3: require('../../assets/peaceful.png'),
-  4: require('../../assets/smiling.png'),
-  5: require('../../assets/laughing.png'),
+export const MOOD_GIFS: Record<number, any> = {
+  1: require('../../src/assets/gif/stressed.gif'),
+  2: require('../../src/assets//gif/anxious.gif'),
+  3: require('../../src/assets//gif/neutral.gif'),
+  4: require('../../src/assets//gif/calm.gif'),
+  5: require('../../src/assets//gif/happy.gif'),
+};
+
+export const MOOD_IMAGES: Record<number, any> = {
+  1: require('../../src/assets/images/stressed.png'),
+  2: require('../../src/assets/images/anxious.png'),
+  3: require('../../src/assets/images/neutral.png'),
+  4: require('../../src/assets/images/calm.png'),
+  5: require('../../src/assets/images/happy.png'),
 };
 
 export const STRESS_CAUSES = [
@@ -35,6 +43,22 @@ export const STRESS_CAUSES = [
   'Health concerns',
   'Relationship stress',
   'Future uncertainty',
+];
+
+export const tags = [
+  'Academic workload',
+  'Exams',
+  'Deadlines',
+  'Financial pressure',
+  'Social isolation',
+  'Family expectations',
+  'Sleep issues',
+  'Health concerns',
+  'Relationship stress',
+  'Future uncertainty',
+  'Rant',
+  'stress',
+  'support'
 ];
 
 export const STRESS_RELIEF_ACTIVITIES = [

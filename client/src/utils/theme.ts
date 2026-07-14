@@ -1,12 +1,12 @@
 export const colors = {
 
   primary: '#4B2E2A',        
-  primaryLight: '#E8D5C4',   
+  primaryLight: '#E8D5C4',
 
   secondary: '#8B5E3C',      
   secondaryLight: '#F1E6DA', 
 
-  background: '#FAF6F1',     // warm cream (latte foam base)
+  background: 'transparent',     // warm cream (latte foam base)
   surface: '#FFFFFF',        // clean foam white
 
   // Text (mocha tones)

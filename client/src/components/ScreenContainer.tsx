@@ -75,5 +75,5 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   scroll: { flexGrow: 1, paddingBottom: 100 },
-  content: { padding: spacing.md },
+  content: { padding: spacing.md , paddingTop: spacing.xs},
 });

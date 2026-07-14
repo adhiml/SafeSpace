@@ -22,13 +22,13 @@ export const UniversalHeader: React.FC<UniversalHeaderProps> = ({
   return (
     <View style={styles.container}>
       {/* Left side: Show a back arrow only if we are NOT on a main tab */}
-      <View style={styles.side}>
+      {/* <View style={styles.side}>
         {!showActions && navigation.canGoBack() && (
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color={colors.primary} />
           </TouchableOpacity>
         )}
-      </View>
+      </View> */}
 
       {/* Center title: Always perfectly locked to center */}
       <Text style={styles.title} numberOfLines={1}>{displayTitle}</Text>
@@ -57,18 +57,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
-    borderBottomLeftRadius: radius.sm,
-    borderBottomRightRadius: radius.sm,
-    height: 56,
+    backgroundColor: '#f3ebc4',
   },
   side: { width: 72 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end' },
   title: {
-    fontSize: 18,
+    fontSize: 30,
     fontWeight: '700',
     color: colors.primary,
-    textAlign: 'center',
+    textAlign: 'left',
     flex: 1,
   },
   iconBtn: { padding: spacing.xs, marginLeft: spacing.xs },

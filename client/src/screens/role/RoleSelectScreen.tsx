@@ -15,6 +15,12 @@ export const RoleSelectScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <View>
+        <Text
+        style={styles.text}>
+          Select Your Role
+        </Text>
+      </View>
       <View style={styles.content}>
         <Text style={styles.brand}>SafeSpace</Text>
         <Text style={styles.sub}>Development role selector — choose a view to preview</Text>
@@ -31,4 +37,5 @@ const styles = StyleSheet.create({
   content: { flex: 1, justifyContent: 'center', padding: spacing.lg },
   brand: { fontSize: 32, fontWeight: '800', color: colors.primary, textAlign: 'center', marginBottom: spacing.sm },
   sub: { textAlign: 'center', color: colors.textMuted, marginBottom: spacing.xl },
+  text: { textAlign: 'center', fontSize: 18, marginBottom: spacing.md }
 });

@@ -4,7 +4,7 @@ import { Text } from 'react-native-paper';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Card } from '../../components/Card';
-import { MoodSelectorBar } from '../../components/MoodSelectorBar';
+import { MoodSelector } from '../../components/MoodSelector';
 import { RecommendationCarousel } from '../../components/RecommendationCarousel';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { PrimaryButton } from '../../components/PrimaryButton';
@@ -40,18 +40,18 @@ export const MoodHomeScreen: React.FC = () => {
     useCallback(() => {
       refreshMoods().catch(() => undefined);
       moodService.getMoods().then(setHistory).catch(() => setHistory([]));
-      
+
       moodService.getMoodAnalytics()
 
-      .then((data) => {
+        .then((data) => {
 
-        // console.log("--- REAL BACKEND PAYLOAD ARRIVING ---", JSON.stringify(data, null, 2));
+          // console.log("--- REAL BACKEND PAYLOAD ARRIVING ---", JSON.stringify(data, null, 2));
 
-        setAnalytics(data);
+          setAnalytics(data);
 
-      })
+        })
 
-      .catch(() => undefined);
+        .catch(() => undefined);
 
       if (needsCheckIn) {
         navigation.navigate('MoodCheckIn');
@@ -122,7 +122,15 @@ export const MoodHomeScreen: React.FC = () => {
           <Text style={styles.currentMood}>
             {MOOD_LABELS[currentLevel]} {updating ? '(saving...)' : ''}
           </Text>
-          <MoodSelectorBar selectedLevel={currentLevel} onSelect={handleMoodSelect} variant={"home"}/>
+
+          {/* Clean container without broken overflow props */}
+          <View style={{ width: '100%' }}>
+            <MoodSelector
+              selectedLevel={currentLevel}
+              onSelect={handleMoodSelect}
+              variant={"home"}
+            />
+          </View>
         </Card>
 
         {/* Foldable Stress Causes Section --- */}
@@ -130,7 +138,7 @@ export const MoodHomeScreen: React.FC = () => {
           <Card>
             <Text style={styles.foldableHeading}>What's contributing to your stress? (Optional)</Text>
             <Text style={styles.foldableSub}>Select all that apply — or skip if you prefer.</Text>
-            
+
             <View style={styles.chips}>
               {STRESS_CAUSES.map((cause) => {
                 const active = selectedCauses.includes(cause);
@@ -147,26 +155,26 @@ export const MoodHomeScreen: React.FC = () => {
             </View>
 
             <View style={styles.actionButtonRow}>
-              <PrimaryButton label="Save" onPress={() => handleSave(false) }/>
-              <PrimaryButton label="Skip" 
-                onPress={() => handleSave(true)} 
-                mode="text" 
+              <PrimaryButton label="Save" onPress={() => handleSave(false)} />
+              <PrimaryButton label="Skip"
+                onPress={() => handleSave(true)}
+                mode="text"
                 color={colors.textMuted} />
             </View>
           </Card>
         )}
 
         {!analytics ? (
-        <Card style={{ padding: spacing.md, alignItems: 'center' }}>
-          <Text style={styles.empty}>
-            Logging more moods will unlock your personalized weekly and monthly charts!
-          </Text>
-        </Card>
-      ) : (
-        <WeeklyMoodChart
-          analytics={analytics}
-        />
-      )}
+          <Card style={{ padding: spacing.md, alignItems: 'center' }}>
+            <Text style={styles.empty}>
+              Logging more moods will unlock your personalized weekly and monthly charts!
+            </Text>
+          </Card>
+        ) : (
+          <WeeklyMoodChart
+            analytics={analytics}
+          />
+        )}
 
         <Text style={styles.sectionTitle}>Recommendations for you</Text>
         <RecommendationCarousel items={getRecommendations(stressLevel)} />

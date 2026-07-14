@@ -32,6 +32,6 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
 );
 
 const styles = StyleSheet.create({
-  btn: { borderRadius: radius.md, marginVertical: 4 },
+  btn: { borderRadius: radius.md, marginVertical: 4 , marginBottom: 10},
   label: { fontWeight: '600', paddingVertical: 4 },
 });
