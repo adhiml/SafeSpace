@@ -46,17 +46,15 @@ export const STRESS_CAUSES = [
 ];
 
 export const tags = [
-  'Academic workload',
-  'Exams',
-  'Deadlines',
-  'Financial pressure',
-  'Social isolation',
-  'Family expectations',
-  'Sleep issues',
-  'Health concerns',
-  'Relationship stress',
-  'Future uncertainty',
+  'Academic',
+  'Financial',
+  'Social',
+  'Family',
+  'Health',
+  'Relationship',
+  'Future',
   'Rant',
+  'Gratitude',
   'stress',
   'support'
 ];

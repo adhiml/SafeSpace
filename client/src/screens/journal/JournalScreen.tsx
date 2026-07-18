@@ -68,7 +68,7 @@
 // });
 
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, StyleSheet, TouchableOpacity, View, Text } from 'react-native';
+import { Alert, FlatList, StyleSheet, TouchableOpacity, View, Text, Image } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Card } from '../../components/Card';
@@ -77,29 +77,7 @@ import { ScreenContainer } from '../../components/ScreenContainer';
 import * as journalService from '../../services/journalService';
 import { Journal, StudentStackParamList } from '../../types';
 import { colors, spacing } from '../../utils/theme';
-// import { 
-//   Plus,
-//   Save,
-//   BookOpen,
-//   Heart,
-//   Brain,
-//   Zap,
-//   Moon,
-//   Smile,
-//   X,
-//   Search,
-//   Calendar,
-//   Tag
-// } from 'lucide-react-native';
-
-// const predefinedTags = [
-//   { name: 'gratitude', icon: Heart, color: 'bg-pink-100 text-pink-700' },
-//   { name: 'stress', icon: Zap, color: 'bg-red-100 text-red-700' },
-//   { name: 'sleep', icon: Moon, color: 'bg-purple-100 text-purple-700' },
-//   { name: 'work', icon: Brain, color: 'bg-blue-100 text-blue-700' },
-//   { name: 'relationships', icon: Smile, color: 'bg-green-100 text-green-700' },
-//   { name: 'health', icon: Heart, color: 'bg-orange-100 text-orange-700' }
-// ];
+import { formatDateTime } from "../../utils/date";
 
 export const JournalScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<StudentStackParamList>>();
@@ -143,39 +121,42 @@ export const JournalScreen: React.FC = () => {
         keyExtractor={(item) => item._id}
         scrollEnabled={false}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate('JournalEditor', { journalId: item._id })
-            }
-          >
-            <Card>
-
-              {/* Title */}
-              <Text style={styles.title}>{item.title}</Text>
-
-              {/* Preview */}
-              <Text numberOfLines={2} style={styles.preview}>
-                {item.content}
-              </Text>
-
-              {/* Tags */}
-              <View style={styles.tagsRow}>
-                {item.tags?.map((tag) => (
-                  <Text key={tag} style={styles.tag}>
-                    #{tag}
-                  </Text>
-                ))}
+          <Card>
+            <View style={{ flexDirection: "row", justifyContent:"space-between" , alignItems:"center"}}>
+              <View>
+                <Text style={styles.title}>{item.title}</Text></View>
+              <View style={{ flexDirection: "row" , columnGap: 5, alignItems: "center"}}>
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.navigate('JournalEditor', { journalId: item._id })
+                  }
+                ><Image source={require('../../assets/icons/edit.png')}
+                  style={{ width: 18, height: 18 }} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => remove(item._id)}
+                ><Image source={require('../../assets/icons/trash.png')}
+                  style={{ width: 18, height: 18 }} />
+                </TouchableOpacity>
               </View>
+            </View>
 
-              {/* Delete */}
-              <PrimaryButton
-                label="Delete"
-                onPress={() => remove(item._id)}
-                mode="text"
-                color={colors.stressed}
-              />
-            </Card>
-          </TouchableOpacity>
+            <Text style={styles.date}>{formatDateTime(item.created_at)}</Text>
+
+            {/* Preview */}
+            <Text numberOfLines={2} style={styles.preview}>
+              {item.content}
+            </Text>
+
+            {/* Tags */}
+            <View style={styles.tagsRow}>
+              {item.tags?.map((tag) => (
+                <Text key={tag} style={styles.tag}>
+                  {tag}
+                </Text>
+              ))}
+            </View>
+          </Card>
         )}
         ListEmptyComponent={
           <Text style={styles.empty}>
@@ -209,6 +190,7 @@ const styles = StyleSheet.create({
   tag: {
     fontSize: 12,
     color: colors.primary,
+
   },
 
   empty: {
@@ -216,4 +198,5 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: spacing.lg,
   },
+  date: { fontSize: 13, color: colors.textMuted, fontWeight: "500", marginTop: 5 }
 });

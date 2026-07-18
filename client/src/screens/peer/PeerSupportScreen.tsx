@@ -1,26 +1,37 @@
-import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, TextInput } from 'react-native-paper';
-import { useFocusEffect } from '@react-navigation/native';
-import { Card } from '../../components/Card';
-import { PrimaryButton } from '../../components/PrimaryButton';
-import { ScreenContainer } from '../../components/ScreenContainer';
-import * as peerService from '../../services/peerService';
-import { PeerPost, User } from '../../types';
-import { colors, radius, spacing } from '../../utils/theme';
-import { tags } from '../../utils/constants';
+import React, { useCallback, useState } from "react";
+import {
+  Alert,
+  FlatList,
+  StyleSheet,
+  View,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { Text, TextInput } from "react-native-paper";
+import { useFocusEffect } from "@react-navigation/native";
+import { Card } from "../../components/Card";
+import { PrimaryButton } from "../../components/PrimaryButton";
+import { ScreenContainer } from "../../components/ScreenContainer";
+import * as peerService from "../../services/peerService";
+import { PeerPost, User } from "../../types";
+import { colors, radius, spacing } from "../../utils/theme";
+import { tags } from "../../utils/constants";
+import {formatDateTime} from "../../utils/date";
 
 const displayName = (user: User | string) =>
-  typeof user === 'object' ? user.anonymous_name || user.user_name : 'Peer';
+  typeof user === "object" ? user.anonymous_name || user.user_name : "Peer";
 
 export const PeerSupportScreen: React.FC = () => {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [posts, setPosts] = useState<PeerPost[]>([]);
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [activeTag, setActiveTag] = useState<string | null>(null);
-  const filteredPost = activeTag === null ? posts : posts.filter(post => post.tags?.includes(activeTag));
+  const filteredPost =
+    activeTag === null
+      ? posts
+      : posts.filter((post) => post.tags?.includes(activeTag));
 
   const load = async () => {
     const data = await peerService.getPosts();
@@ -30,7 +41,7 @@ export const PeerSupportScreen: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       load().catch(() => undefined);
-    }, [])
+    }, []),
   );
 
   const submit = async () => {
@@ -38,11 +49,11 @@ export const PeerSupportScreen: React.FC = () => {
     try {
       setLoading(true);
       await peerService.createPost(content.trim(), selectedTags);
-      setContent('');
+      setContent("");
       setSelectedTags([]);
       await load();
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to post');
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to post");
     } finally {
       setLoading(false);
     }
@@ -53,15 +64,13 @@ export const PeerSupportScreen: React.FC = () => {
       await peerService.meTooPost(id);
       await load();
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed');
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed");
     }
   };
 
   const toggleTag = (tag: string) => {
-    setSelectedTags(prev =>
-      prev.includes(tag)
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
   };
 
@@ -70,30 +79,33 @@ export const PeerSupportScreen: React.FC = () => {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ paddingVertical: 10 }}>
-        {
-          tags.map((tag, index) => {
-            const isActive = tag === activeTag;
-            return (
-              <TouchableOpacity
-                key={index}
-                onPress={() => setActiveTag(activeTag === tag ? null : tag)}
-                style={styles.headerTag}
+        style={{ paddingVertical: 10 }}
+      >
+        {tags.map((tag, index) => {
+          const isActive = tag === activeTag;
+          return (
+            <TouchableOpacity
+              key={index}
+              onPress={() => setActiveTag(activeTag === tag ? null : tag)}
+              style={styles.headerTag}
+            >
+              <Text
+                style={[
+                  styles.headerTagText,
+                  isActive && styles.activeHeaderTagText,
+                ]}
               >
-                <Text
-                  style={[
-                    styles.headerTagText,
-                    isActive && styles.activeHeaderTagText]}
-                >
-                  #{tag}
-                </Text>
-              </TouchableOpacity>
-            )
-          })
-        }
+                {tag}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
 
-      <PrimaryButton label="New Post" onPress={() => setIsPanelOpen(prev => !prev)} />
+      <PrimaryButton
+        label="New Post"
+        onPress={() => setIsPanelOpen((prev) => !prev)}
+      />
       {/* Foldable Post Write Up Section --- */}
       {isPanelOpen && (
         <Card>
@@ -117,7 +129,11 @@ export const PeerSupportScreen: React.FC = () => {
                   style={[styles.chip, isActive && styles.chipActive]}
                   onPress={() => toggleTag(tag)}
                 >
-                  <Text style={[styles.chipText, isActive && styles.chipTextActive]}>{tag}</Text>
+                  <Text
+                    style={[styles.chipText, isActive && styles.chipTextActive]}
+                  >
+                    {tag}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
@@ -136,11 +152,12 @@ export const PeerSupportScreen: React.FC = () => {
         renderItem={({ item }) => (
           <Card>
             <Text style={styles.author}>{displayName(item.user_id)}</Text>
+            <Text style={styles.date}>{formatDateTime(item.created_at)}</Text>
             {item.tags?.length > 0 && (
               <View style={styles.postTags}>
                 {item.tags.map((tag) => (
                   <View key={tag} style={styles.postTag}>
-                    <Text style={styles.tagText}>#{tag}</Text>
+                    <Text style={styles.tagText}>{tag}</Text>
                   </View>
                 ))}
               </View>
@@ -153,7 +170,9 @@ export const PeerSupportScreen: React.FC = () => {
             />
           </Card>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>No posts yet. Be the first to share.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.empty}>No posts yet. Be the first to share.</Text>
+        }
       />
     </ScreenContainer>
   );
@@ -161,25 +180,55 @@ export const PeerSupportScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   input: { backgroundColor: "#ffffffc6", marginBottom: spacing.sm },
-  author: { fontWeight: '700', color: colors.primary, marginBottom: spacing.xs },
-  postTags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm },
+  author: {
+    fontWeight: "700",
+    color: colors.primary,
+    marginBottom: spacing.xs,
+  },
+  postTags: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
   postTag: {
     backgroundColor: colors.primaryLight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.full,
   },
-  tagText: { fontSize: 11, color: colors.primary, fontWeight: '600' },
+  tagText: { fontSize: 11, color: colors.primary, fontWeight: "600" },
   body: { color: colors.text, lineHeight: 22, marginBottom: spacing.sm },
-  empty: { textAlign: 'center', color: colors.textMuted, marginTop: spacing.lg },
+  empty: {
+    textAlign: "center",
+    color: colors.textMuted,
+    marginTop: spacing.lg,
+  },
+  date:{fontSize: 13, color: colors.primary, fontWeight: "600", marginBottom:5},
   // --- Header Tags Style ---
   headerTagText: { fontSize: 16 },
-  activeHeaderTagText: { fontWeight: 'bold' },
-  headerTag: { paddingHorizontal: 12, paddingVertical: 8, marginRight: 8, borderRadius: 15, backgroundColor: "#ffffffc6" },
+  activeHeaderTagText: { fontWeight: "bold" },
+  headerTag: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderRadius: 15,
+    backgroundColor: "#ffffffc6",
+  },
   // --- Foldable Panel Styles ---
-  foldableHeading: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 4, marginVertical: 4 },
-  foldableSub: { color: colors.textMuted, fontSize: 13, marginBottom: spacing.md },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.md },
+  foldableHeading: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: 4,
+    marginVertical: 4,
+  },
+  foldableSub: {
+    color: colors.textMuted,
+    fontSize: 13,
+    marginBottom: spacing.md,
+  },
+  chips: { flexDirection: "row", flexWrap: "wrap", marginBottom: spacing.md },
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -192,10 +241,10 @@ const styles = StyleSheet.create({
   },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { color: colors.text, fontSize: 12 },
-  chipTextActive: { color: '#fff', fontWeight: '600' },
+  chipTextActive: { color: "#fff", fontWeight: "600" },
   actionButtonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: spacing.sm,
     marginTop: spacing.xs,
   },

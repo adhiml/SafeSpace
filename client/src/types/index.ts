@@ -111,7 +111,7 @@ export interface PeerPost {
   sentiment_score: number;
   tags: string[];
   me_too_count: number;
-  created_at: string;
+  created_at?: string;
 }
 
 export interface PeerComment {
