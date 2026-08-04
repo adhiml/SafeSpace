@@ -16,7 +16,8 @@ import * as peerService from "../../services/peerService";
 import { PeerPost, User } from "../../types";
 import { colors, radius, spacing } from "../../utils/theme";
 import { tags } from "../../utils/constants";
-import {formatDateTime} from "../../utils/date";
+import { formatDateTime } from "../../utils/date";
+import { AppointmentCard } from "../../components/AppointmentCard";
 
 const displayName = (user: User | string) =>
   typeof user === "object" ? user.anonymous_name || user.user_name : "Peer";
@@ -204,7 +205,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: spacing.lg,
   },
-  date:{fontSize: 13, color: colors.primary, fontWeight: "600", marginBottom:5},
+  date: { fontSize: 13, color: colors.primary, fontWeight: "600", marginBottom: 5 },
   // --- Header Tags Style ---
   headerTagText: { fontSize: 16 },
   activeHeaderTagText: { fontWeight: "bold" },

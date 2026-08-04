@@ -1,82 +1,12 @@
-// import React, { useEffect, useState } from 'react';
-// import { Alert, StyleSheet } from 'react-native';
-// import { TextInput } from 'react-native-paper';
-// import { NativeStackScreenProps } from '@react-navigation/native-stack';
-// import { PrimaryButton } from '../../components/PrimaryButton';
-// import { ScreenContainer } from '../../components/ScreenContainer';
-// import * as journalService from '../../services/journalService';
-// import { StudentStackParamList } from '../../types';
-// import { colors, spacing } from '../../utils/theme';
-
-// type Props = NativeStackScreenProps<StudentStackParamList, 'JournalEditor'>;
-
-// export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
-//   const { journalId } = route.params;
-//   const [title, setTitle] = useState('');
-//   const [content, setContent] = useState('');
-//   const [loading, setLoading] = useState(false);
-
-//   useEffect(() => {
-//     if (!journalId) return;
-//     journalService.getJournals().then((list) => {
-//       const j = list.find((x) => x._id === journalId);
-//       if (j) {
-//         setTitle(j.title);
-//         setContent(j.content);
-//       }
-//     });
-//   }, [journalId]);
-
-//   const save = async () => {
-//     if (!title.trim() || !content.trim()) {
-//       Alert.alert('Missing fields', 'Title and content are required.');
-//       return;
-//     }
-//     try {
-//       setLoading(true);
-//       if (journalId) {
-//         await journalService.updateJournal(journalId, { title, content });
-//       } else {
-//         await journalService.createJournal({ title, content });
-//       }
-//       navigation.goBack();
-//     } catch (e) {
-//       Alert.alert('Error', e instanceof Error ? e.message : 'Save failed');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <ScreenContainer title={journalId ? 'Edit Journal' : 'New Journal'}>
-//       <TextInput label="Title" value={title} onChangeText={setTitle} mode="outlined" style={styles.input} />
-//       <TextInput
-//         label="Content"
-//         value={content}
-//         onChangeText={setContent}
-//         mode="outlined"
-//         multiline
-//         numberOfLines={8}
-//         style={styles.input}
-//       />
-//       <PrimaryButton label="Save entry" onPress={save} loading={loading} />
-//     </ScreenContainer>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   input: { marginBottom: spacing.md, backgroundColor: colors.surface },
-// });
-
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { Alert, StyleSheet, View, Text, TouchableOpacity, } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import * as journalService from '../../services/journalService';
 import { StudentStackParamList } from '../../types';
-import { colors, spacing } from '../../utils/theme';
+import { colors, spacing, radius } from '../../utils/theme';
 
 type Props = NativeStackScreenProps<StudentStackParamList, 'JournalEditor'>;
 
@@ -150,25 +80,16 @@ export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <ScreenContainer title={journalId ? 'Edit Journal' : 'New Journal'}>
-      
+
       {/* Title */}
       <TextInput
         label="Title"
         value={title}
         onChangeText={setTitle}
-        mode="outlined"
-        style={styles.input}
-      />
-
-      {/* Content */}
-      <TextInput
-        label="Content"
-        value={content}
-        onChangeText={setContent}
-        mode="outlined"
-        multiline
-        numberOfLines={8}
-        style={styles.input}
+        mode="flat"
+        underlineColor="transparent"
+        activeUnderlineColor="transparent"
+        style={styles.titleInput}
       />
 
       {/* Tags Input */}
@@ -177,8 +98,10 @@ export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
           label="Add tag"
           value={tagInput}
           onChangeText={setTagInput}
-          mode="outlined"
-          style={{ flex: 1 }}
+          mode="flat"
+          underlineColor="transparent"
+          activeUnderlineColor="transparent"
+          style={styles.tagInput}
           onSubmitEditing={addTag}
         />
         <TouchableOpacity style={styles.addBtn} onPress={addTag}>
@@ -199,6 +122,17 @@ export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
         ))}
       </View>
 
+      {/* Content */}
+      <TextInput
+        label="Content"
+        value={content}
+        onChangeText={setContent}
+        underlineColor="transparent"
+        activeUnderlineColor="transparent"
+        multiline={true}
+        style={styles.contentInput}
+      />
+
       {/* Save */}
       <PrimaryButton label="Save entry" onPress={save} loading={loading} />
     </ScreenContainer>
@@ -206,18 +140,24 @@ export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  input: {
+  titleInput: {
     marginBottom: spacing.md,
-    backgroundColor: colors.surface,
+    backgroundColor: "#ffffff59",
+    borderRadius: 8,
   },
-
+  contentInput: {
+    marginBottom: spacing.md,
+    backgroundColor: "#ffffff59",
+    borderRadius: 8,
+    flex:1,
+    textAlignVertical:"top",
+    minHeight:400
+  },
   tagInputRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: spacing.md,
     alignItems: 'center',
   },
-
   addBtn: {
     width: 45,
     height: 45,
@@ -231,18 +171,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: spacing.md,
+    marginVertical:spacing.sm,
+  },
+
+  tagInput: {
+    backgroundColor: "#ffffff59",
+    borderRadius: 8,
+    flex: 1
   },
 
   tag: {
-    backgroundColor: '#eee',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.full,
   },
 
   tagText: {
     fontSize: 12,
     color: colors.text,
+    fontWeight:600,
   },
 });

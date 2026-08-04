@@ -11,6 +11,7 @@ interface ScreenContainerProps {
   scroll?: boolean;
   showHeader?: boolean;
   hideHeaderActions?: boolean;
+  floatingAction?: React.ReactNode;
 }
 
 // export const ScreenContainer: React.FC<ScreenContainerProps> = ({
@@ -42,7 +43,8 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   children,
   scroll = true,
   showHeader = true,
-  hideHeaderActions = false
+  hideHeaderActions = false,
+  floatingAction,
 }) => (
   <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
     {/* 
@@ -68,6 +70,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
     ) : (
       <View style={[styles.flex, styles.content]}>{children}</View>
     )}
+    {floatingAction}
   </SafeAreaView>
 );
 
@@ -75,5 +78,5 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   scroll: { flexGrow: 1, paddingBottom: 100 },
-  content: { padding: spacing.md , paddingTop: spacing.xs},
+  content: { padding: spacing.md , paddingTop: spacing.xs, paddingBottom: 0},
 });
