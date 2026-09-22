@@ -12,6 +12,7 @@ const seedUsers = async () => {
         email: `${user._id}@safespace.app`,
         role: user.role,
         faculty: user.faculty || '',
+        specialization: user.specialization || '',
         gender: '',
         profile_picture: '',
       },

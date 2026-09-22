@@ -1,8 +1,16 @@
 import api from '../api/client';
 import { Appointment, ChatMessage, Notification, User } from '../types';
 
-export const getCounsellors = async () => {
-  const { data } = await api.get<User[]>('/counsellors');
+export interface Counsellor {
+  id: string;
+  name: string;
+  title: string;
+  faculty?: string;
+  profile_picture?: string;
+}
+
+export const getCounsellors = async (): Promise<Counsellor[]> => {
+  const { data } = await api.get<Counsellor[]>('/counsellors');
   return data;
 };
 
@@ -28,6 +36,14 @@ export const updateAppointmentStatus = async (
   const { data } = await api.patch<Appointment>(`/appointments/${id}/status`, { status });
   return data;
 };
+
+export const getAppointmentDetails = async (id: string) => {
+  const { data } = await api.get<Appointment>(`/appointments/${id}`);
+  return data;
+};
+
+export const completeAppointment = async (id: string) =>
+  updateAppointmentStatus(id, 'completed');
 
 export const sendMessage = async (appointment_id: string, message: string) => {
   const { data } = await api.post<ChatMessage>('/messages', { appointment_id, message });

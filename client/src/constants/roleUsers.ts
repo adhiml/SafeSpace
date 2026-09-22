@@ -1,17 +1,26 @@
 import { AppRole, RoleProfile } from '../types';
 
 export const ROLE_USER_IDS: Record<AppRole, string> = {
-  counsellor: 'counsellor_001',
+  counsellor1: 'counsellor_001',
+  counsellor2: 'counsellor_002',
   student1: 'user_001',
   student2: 'user_002',
 };
 
 export const DEFAULT_PROFILES: Record<AppRole, RoleProfile> = {
-  counsellor: {
+  counsellor1: {
     userId: 'counsellor_001',
     user_name: 'Morgan Lee',
     displayTitle: 'Dr.',
     specialization: 'Academic stress & anxiety',
+    faculty: 'Student Wellness Centre',
+    profile_picture: '',
+  },
+  counsellor2: {
+    userId: 'counsellor_002',
+    user_name: 'Alex Johnson',
+    displayTitle: 'Dr.',
+    specialization: 'Mental health & wellbeing',
     faculty: 'Student Wellness Centre',
     profile_picture: '',
   },
@@ -36,8 +45,10 @@ export const isStudentRole = (role: AppRole | null): role is 'student1' | 'stude
 
 export const getRoleLabel = (role: AppRole): string => {
   switch (role) {
-    case 'counsellor':
-      return 'Counsellor View';
+    case 'counsellor1':
+      return 'Counsellor 1 View';
+    case 'counsellor2':
+      return 'Counsellor 2 View';
     case 'student1':
       return 'Student 1 View';
     case 'student2':

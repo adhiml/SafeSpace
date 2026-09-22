@@ -1,19 +1,17 @@
+import { UserSelect } from "react-native-gesture-handler/lib/typescript/handlers/gestureHandlerCommon";
+
 // handles backend data
-export type AppRole = 'counsellor' | 'student1' | 'student2';
+export type AppRole = 'counsellor1' | 'counsellor2' | 'student1' | 'student2';
 
 export type UserRole = 'student' | 'counsellor';
 
-export interface RoleProfile {
+export interface RoleProfile extends User { // holds role-related data
   userId: string;
-  user_name: string;
-  anonymous_name?: string;
-  faculty?: string;
-  profile_picture?: string;
   displayTitle?: string;
   specialization?: string;
 }
 
-export interface User {
+export interface User { // holds core
   _id: string;
   user_name: string;
   anonymous_name?: string;
@@ -24,6 +22,15 @@ export interface User {
   faculty?: string;
   created_at?: string;
 }
+
+export const default_avatar = require ('../assets/images/user.png');
+
+export const getAvatarSource = (profile_picture?: string) => {
+  if (profile_picture && profile_picture.trim() !== '') {
+    return { uri: profile_picture };
+  }
+  return default_avatar;
+};
 
 export interface MoodEntry {
   _id: string;
@@ -131,6 +138,8 @@ export interface Appointment {
   status: 'pending' | 'approved' | 'completed' | 'cancelled';
   is_anonymous: boolean;
   created_at: string;
+  start_time?: string;
+  end_time?: string;
 }
 
 export interface ChatMessage {
@@ -164,7 +173,7 @@ export type StudentTabParamList = {
 export type CounsellorTabParamList = {
   Home: undefined;
   ExpertInsights: undefined;
-  Chat: undefined;
+  Consult: undefined;
   Insights: undefined;
 };
 
@@ -176,7 +185,7 @@ export type StudentStackParamList = {
   MoodCheckIn: undefined;
   StressCauses: { moodLevel: number; stressLevel: number };
   JournalEditor: { journalId?: string };
-  Chat: { appointmentId: string; title: string; isAnonymous?: boolean };
+  Consult: { appointmentId: string; title: string; isAnonymous?: boolean };
 };
 
 export type CounsellorStackParamList = {
@@ -184,14 +193,14 @@ export type CounsellorStackParamList = {
   Settings: undefined;
   Profile: undefined;
   Notifications: undefined;
-  Chat: { appointmentId: string; title: string; isAnonymous?: boolean };
+  Consult: { appointmentId: string; title: string; isAnonymous?: boolean };
 };
 
 export type SharedStackParamList = {
   Profile: undefined;
   Settings: undefined;
   Notifications: undefined;
-  Chat: { appointmentId: string; title: string; isAnonymous?: boolean };
+  Consult: { appointmentId: string; title: string; isAnonymous?: boolean };
 };
 
 export type RootStackParamList = {

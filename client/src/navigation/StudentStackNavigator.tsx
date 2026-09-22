@@ -30,7 +30,7 @@ export const StudentStackNavigator: React.FC = () => {
       <Stack.Screen name="Settings" component={SettingsWrapper} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="JournalEditor" component={JournalEditorScreen} />
-      <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen name="Consult" component={ChatScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
     </Stack.Navigator>
   );

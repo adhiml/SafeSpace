@@ -124,7 +124,7 @@ export const CounsellorInsightsScreen: React.FC = () => {
     .slice(0, 5); // Show top 5 global problems
 
   return (
-    <ScreenContainer title="Insights">
+    <ScreenContainer title="insights.">
       <Text style={styles.note}>
         Aggregated student population data — individual identities hidden
       </Text>

@@ -19,8 +19,14 @@ const DEMO_USERS = {
     user_name: 'Morgan Lee',
     anonymous_name: 'CounsellorML',
     role: 'counsellor',
-    faculty: 'Student Wellness Centre',
     specialization: 'Academic stress & anxiety',
+  },
+  counsellor_002: {
+    _id: 'counsellor_002',
+    user_name: 'Alex Johnson',
+    anonymous_name: 'CounsellorAJ',
+    role: 'counsellor',
+    specialization: 'Mental health & wellbeing',
   },
 };
 

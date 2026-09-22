@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema(
     profile_picture: { type: String, default: '' },
     gender: { type: String, default: '' },
     faculty: { type: String, default: '' },
+    specialization: { type: String, default: '' },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );

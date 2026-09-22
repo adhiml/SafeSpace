@@ -16,7 +16,7 @@ export const CounsellorStackNavigator: React.FC = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="CounsellorTabs">
       <Stack.Screen name="CounsellorTabs" component={CounsellorTabNavigator} />
       <Stack.Screen name="Settings" component={SettingsWrapper} />
-      <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen name="Consult" component={ChatScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
     </Stack.Navigator>

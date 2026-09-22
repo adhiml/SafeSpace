@@ -17,7 +17,7 @@ export const UniversalHeader: React.FC<UniversalHeaderProps> = ({
   showActions = true, // Default to true if not provided
 }) => {
   const navigation = useNavigation();
-  const displayTitle = isHome ? 'SafeSpace' : title;
+  const displayTitle = isHome ? 'tenang.' : title;
 
   return (
     <View style={styles.container}>
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: '#f3ebc4',
+    backgroundColor: '#f3ebc400',
   },
   side: { width: 72 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end' },

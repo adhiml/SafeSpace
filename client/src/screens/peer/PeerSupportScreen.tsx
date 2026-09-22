@@ -76,7 +76,7 @@ export const PeerSupportScreen: React.FC = () => {
   };
 
   return (
-    <ScreenContainer title="Peer Support">
+    <ScreenContainer title="peer support.">
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -251,5 +251,5 @@ const styles = StyleSheet.create({
   },
   halfBtn: {
     flex: 1,
-  },
+  }, 
 });

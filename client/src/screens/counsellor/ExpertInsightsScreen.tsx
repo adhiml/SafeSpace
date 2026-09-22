@@ -37,7 +37,7 @@ export const ExpertInsightsScreen: React.FC = () => {
   };
 
   return (
-    <ScreenContainer title="Expert Insights">
+    <ScreenContainer title="expert.">
       <Card>
         <Text style={styles.hint}>Share professional guidance for the student community</Text>
         <TextInput mode="outlined" multiline value={content} onChangeText={setContent} style={styles.input} />

@@ -41,7 +41,7 @@ export const JournalScreen: React.FC = () => {
   };
 
   return (
-    <ScreenContainer title="Journal" scroll={false} floatingAction={
+    <ScreenContainer title="journal." scroll={false} floatingAction={
       <FloatingButton
         onPress={() => navigation.navigate('JournalEditor', {})}
       />

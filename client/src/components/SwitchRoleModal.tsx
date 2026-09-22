@@ -5,7 +5,7 @@ import { getRoleLabel } from '../constants/roleUsers';
 import { AppRole } from '../types';
 import { colors, radius, spacing } from '../utils/theme';
 
-const ROLES: AppRole[] = ['counsellor', 'student1', 'student2'];
+const ROLES: AppRole[] = ['counsellor1', 'counsellor2', 'student1', 'student2'];
 
 interface SwitchRoleModalProps {
   visible: boolean;

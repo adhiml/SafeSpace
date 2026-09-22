@@ -60,7 +60,7 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
       switchRole,
       clearRole,
       updateProfile,
-      isCounsellor: role === 'counsellor',
+      isCounsellor: role === 'counsellor1' || role === 'counsellor2',
       isStudent: role === 'student1' || role === 'student2',
     }),
     [role, profile, setRole, switchRole, clearRole, updateProfile]

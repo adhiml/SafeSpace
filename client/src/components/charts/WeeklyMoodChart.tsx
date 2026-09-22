@@ -7,7 +7,7 @@ import { MoodTrendChart } from './MoodTrendChart';
 import { MoodAnalytics } from '../../types';
 import { colors, spacing } from '../../utils/theme';
 import { Card } from '../Card';
-import { NavigationProp, useNavigation } from '@react-navigation/native';
+import {useNavigation } from '@react-navigation/native';
 
 interface WeeklyMoodChartProps {
   analytics: MoodAnalytics;

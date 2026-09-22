@@ -15,7 +15,7 @@ const Tab = createBottomTabNavigator<CounsellorTabParamList>();
 const icons: Record<keyof CounsellorTabParamList, keyof typeof Ionicons.glyphMap> = {
   Home: 'home-outline',
   ExpertInsights: 'bulb-outline',
-  Chat: 'mail-outline',
+  Consult: 'mail-outline',
   Insights: 'stats-chart-outline',
 };
 
@@ -37,7 +37,7 @@ export const CounsellorTabNavigator: React.FC = () => (
   >
     <Tab.Screen name="Home" component={CounsellorHomeScreen} />
     <Tab.Screen name="ExpertInsights" component={ExpertInsightsScreen} options={{ tabBarLabel: 'Expert' }} />
-    <Tab.Screen name="Chat" component={CounsellorMessagesScreen} />
+    <Tab.Screen name="Consult" component={CounsellorMessagesScreen} />
     <Tab.Screen name="Insights" component={CounsellorInsightsScreen} />
   </Tab.Navigator>
 );

@@ -79,7 +79,7 @@ export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   return (
-    <ScreenContainer title={journalId ? 'Edit Journal' : 'New Journal'}>
+    <ScreenContainer title={journalId ? 'edit journal.' : 'new journal.'}>
 
       {/* Title */}
       <TextInput
