@@ -118,6 +118,8 @@ export interface PeerPost {
   sentiment_score: number;
   tags: string[];
   me_too_count: number;
+  me_too_users: string[];
+  views: number;
   created_at?: string;
 }
 
@@ -160,7 +162,7 @@ export interface Notification {
   created_at: string;
 }
 
-export type MoodLabel = 'Stressed' | 'Anxious' | 'Calm' | 'Okay' | 'Happy';
+export type MoodLabel = 'Stressed' | 'Anxious' | 'Neutral' | 'Calm' | 'Happy';
 
 export type StudentTabParamList = {
   Home: undefined;

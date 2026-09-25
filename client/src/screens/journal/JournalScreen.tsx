@@ -8,7 +8,7 @@ import { ScreenContainer } from '../../components/ScreenContainer';
 import { CollapsiblePreview } from '../../components/CollapsiblePreview';
 import * as journalService from '../../services/journalService';
 import { Journal, StudentStackParamList } from '../../types';
-import { colors, spacing, radius } from '../../utils/theme';
+import { colors, spacing, radius, palette} from '../../utils/theme';
 import { formatDateTime } from "../../utils/date";
 
 export const JournalScreen: React.FC = () => {
@@ -53,8 +53,8 @@ export const JournalScreen: React.FC = () => {
         keyExtractor={(item) => item._id}
         scrollEnabled={true}
         renderItem={({ item }) => (
-          <Card>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Card style={styles.card}>
+            <View style={styles.journalCardHeader}>
               <View style={{flex: 1, marginRight: spacing.md}}>
                 <Text style={styles.title}>{item.title}</Text></View>
               <View style={{ flexDirection: "row", columnGap: 5, alignItems: "center" }}>
@@ -91,7 +91,7 @@ export const JournalScreen: React.FC = () => {
                 <>
                   <Text
                     numberOfLines={isExpanded ? undefined : 4}
-                    style={styles.preview}
+                    style={[styles.preview, isExpanded && styles.expanded]}
                   >
                     {item.content}
                   </Text>
@@ -120,16 +120,39 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
   },
+  journalCardHeader: {
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center",
+    marginBottom: "auto"
+  },
+  card: {
+      flex: 1,
+      backgroundColor: palette.white,
+      borderWidth: 1,
+      borderColor: palette.borderSoft,
+      borderRadius: 18,
+      padding: 14,
+      marginBottom: spacing.md,
+      shadowColor: palette.text,
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 3 },
+      elevation: 2,
+    },
   preview: {
     color: colors.textMuted,
     marginTop: spacing.xs,
     textAlign: "justify",
     lineHeight: 20
   },
+  expanded: {
+    color: colors.text,
+  },
   tagsRow: {
     flexDirection: 'row',
     flexWrap: "wrap",
-    marginTop: 5,
+    marginTop: spacing.sm,
     gap: 6,
   },
   postTag: {

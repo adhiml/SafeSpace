@@ -1,6 +1,6 @@
 export const colors = {
 
-  primary: '#4B2E2A',        
+  primary: '#543730',        
   primaryLight: '#E8D5C4',
 
   secondary: '#8B5E3C',      
@@ -16,11 +16,11 @@ export const colors = {
   border: '#FAF6F1',        // soft coffee foam border
 
   // Mood colors (coffee-inspired emotional tones)
-  stressed: '#F1BABF',      // burnt caramel blush
-  anxious: '#E8C07D',       // cappuccino beige
-  okay: '#BFD7EA',         // neutral latte grey-brown
-  calm: '#C3D8C1',         // soft matcha latte green
-  happy: '#F9E3E9',        // vanilla cream
+  stressed: '#fedde0',      // burnt caramel blush
+  anxious: '#f8fad4',       // cappuccino beige
+  neutral: '#e5fbfc',         // neutral latte grey-brown
+  calm: '#edfdec',         // soft matcha latte green
+  happy: '#f1eefd',        // vanilla cream
 
   // Depth
   shadow: 'rgba(47, 31, 29, 0.12)',

@@ -7,7 +7,8 @@ export const Background = ({ children } : any) => {
       // colors={['#fdea8c', '#edcdd0']}
       // colors={['#edcdd0','#ffffff']}
       // colors={['#b2a7cb','#ffffff']}
-      colors={['#f3ebc4','#edcdd0']}
+      // colors={['#f3ebc4','#edcdd0']}
+      colors={['#F8F1E9', '#E8D5C4']}
       style={{ flex: 1}}
     >
       {children}

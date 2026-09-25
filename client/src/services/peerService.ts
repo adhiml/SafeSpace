@@ -15,3 +15,13 @@ export const meTooPost = async (postId: string) => {
   const { data } = await api.post<PeerPost>(`/posts/${postId}/me-too`);
   return data;
 };
+
+export const viewPost = async (postId: string) => {
+  const { data } = await api.post<PeerPost>(`/posts/${postId}/view`);
+  return data;
+};
+
+export const deletePost = async (postId: string) => {
+  const { data } = await api.delete<{ _id: string }>(`/posts/${postId}`);
+  return data;
+};

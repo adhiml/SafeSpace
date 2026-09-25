@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, View, Text, TouchableOpacity, } from 'react-native';
-import { TextInput } from 'react-native-paper';
+import { Alert, StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import * as journalService from '../../services/journalService';
 import { StudentStackParamList } from '../../types';
-import { colors, spacing, radius } from '../../utils/theme';
+import { colors, spacing, radius, palette } from '../../utils/theme';
 
 type Props = NativeStackScreenProps<StudentStackParamList, 'JournalEditor'>;
 
@@ -83,24 +82,20 @@ export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
 
       {/* Title */}
       <TextInput
-        label="Title"
+        placeholder="Title"
+        placeholderTextColor={colors.textMuted}
         value={title}
         onChangeText={setTitle}
-        mode="flat"
-        underlineColor="transparent"
-        activeUnderlineColor="transparent"
         style={styles.titleInput}
       />
 
       {/* Tags Input */}
       <View style={styles.tagInputRow}>
         <TextInput
-          label="Add tag"
+          placeholder="Add tag"
+          placeholderTextColor={colors.textMuted}
           value={tagInput}
           onChangeText={setTagInput}
-          mode="flat"
-          underlineColor="transparent"
-          activeUnderlineColor="transparent"
           style={styles.tagInput}
           onSubmitEditing={addTag}
         />
@@ -124,11 +119,10 @@ export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
 
       {/* Content */}
       <TextInput
-        label="Content"
+        placeholder="Share your thoughts..."
+        placeholderTextColor={colors.textMuted}
         value={content}
         onChangeText={setContent}
-        underlineColor="transparent"
-        activeUnderlineColor="transparent"
         multiline={true}
         style={styles.contentInput}
       />
@@ -142,16 +136,24 @@ export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   titleInput: {
     marginBottom: spacing.md,
-    backgroundColor: "#ffffff59",
-    borderRadius: 8,
+    backgroundColor: palette.surfaceAlt,
+    fontSize: 14,
+    padding: 20,
+    color: palette.text,
+    borderRadius: 14,
+    textAlignVertical: "top",
+    marginVertical: spacing.sm,
   },
   contentInput: {
     marginBottom: spacing.md,
-    backgroundColor: "#ffffff59",
-    borderRadius: 8,
-    flex:1,
-    textAlignVertical:"top",
-    minHeight:400
+    backgroundColor: palette.surfaceAlt,
+    fontSize: 14,
+    padding: 20,
+    color: palette.text,
+    borderRadius: 14,
+    textAlignVertical: "top",
+    marginVertical: spacing.sm,
+    minHeight: 400
   },
   tagInputRow: {
     flexDirection: 'row',
@@ -171,13 +173,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginVertical:spacing.sm,
+    marginVertical: spacing.sm,
   },
 
   tagInput: {
-    backgroundColor: "#ffffff59",
-    borderRadius: 8,
-    flex: 1
+    flex: 1,
+    marginBottom: spacing.md,
+    backgroundColor: palette.surfaceAlt,
+    fontSize: 14,
+    padding: 20,
+    color: palette.text,
+    borderRadius: 14,
+    textAlignVertical: "top",
+    marginVertical: spacing.sm
   },
 
   tag: {
@@ -190,6 +198,6 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 12,
     color: colors.text,
-    fontWeight:600,
+    fontWeight: 600,
   },
 });

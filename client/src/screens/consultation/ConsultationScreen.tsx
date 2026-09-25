@@ -220,7 +220,10 @@ export const ConsultationScreen: React.FC = () => {
   };
 
   return (
-    <ScreenContainer title="consultation.">
+    <ScreenContainer title="consultation."  floatingAction={
+          <FloatingButton
+            onPress={openSheet}
+          />}>
       <Pressable
         style={styles.flex}
         onPress={() => filterOpen && setFilterOpen(false)}
@@ -422,10 +425,6 @@ export const ConsultationScreen: React.FC = () => {
           )}
         </ScrollView>
       </Pressable>
-
-      {/* Floating action button */}
-      <FloatingButton onPress={openSheet}></FloatingButton>
-
       <Modal
         visible={sheetOpen}
         transparent
@@ -596,7 +595,7 @@ export const ConsultationScreen: React.FC = () => {
               <TextInput
                 style={[
                   styles.textArea,
-                  { padding: 12, borderRadius: 14, minHeight: 70, textAlignVertical: "top" },
+                  { padding: 12, borderRadius: 14, minHeight: 70, textAlignVertical: "top" , lineHeight: 20},
                 ]}
                 placeholder="Share anything; your concerns, topics to discuss, or questions for your counsellor."
                 placeholderTextColor={palette.textFaint}
@@ -867,7 +866,7 @@ const styles = StyleSheet.create({
     zIndex: 30,
   },
 
-  backdrop: { flex: 1, backgroundColor: palette.overlay },
+  backdrop: { flex: 1},
   sheet: {
     backgroundColor: palette.white,
     borderTopLeftRadius: 28,
@@ -972,8 +971,8 @@ const styles = StyleSheet.create({
   segmentText: { fontSize: 12, fontWeight: "600", color: palette.textSoft },
   segmentTextActive: { color: palette.white, fontWeight: "700" },
 
-  textArea: { backgroundColor: palette.surfaceAlt, fontSize: 13 },
-  textAreaOutline: { borderRadius: 14 },
+  textArea: { backgroundColor: palette.surfaceAlt, fontSize: 13,},
+  textAreaOutline: { borderRadius: 14, },
 
   submit: {
     marginTop: spacing.md,

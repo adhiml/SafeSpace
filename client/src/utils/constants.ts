@@ -1,4 +1,5 @@
 import { MoodLabel } from '../types';
+import {colors} from "../utils/theme"
 
 export const MOOD_LABELS: Record<number, MoodLabel> = {
   1: 'Stressed',
@@ -9,11 +10,11 @@ export const MOOD_LABELS: Record<number, MoodLabel> = {
 };
 
 export const MOOD_COLORS: Record<number, string> = {
-  1: '#fedde0', // stressed
-  2: '#f8fad4', // anxious
-  3: '#e5fbfc', // neutral
-  4: '#edfdec', // calm
-  5: '#f1eefd', // happy
+  1: colors.stressed, // stressed
+  2: colors.anxious, // anxious
+  3: colors.neutral, // neutral
+  4: colors.calm, // calm
+  5: colors.happy, // happy #f1eefd
 };
 
 export const MOOD_GIFS: Record<number, any> = {

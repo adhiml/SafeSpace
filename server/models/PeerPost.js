@@ -7,6 +7,8 @@ const peerPostSchema = new mongoose.Schema(
     sentiment_score: { type: Number, default: 0 },
     tags: [{ type: String }],
     me_too_count: { type: Number, default: 0 },
+    me_too_users: [{ type: String }],
+    views: { type: Number, default: 0 },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );

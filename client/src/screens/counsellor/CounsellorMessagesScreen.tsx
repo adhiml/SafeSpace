@@ -160,7 +160,7 @@ export const CounsellorMessagesScreen: React.FC = () => {
   };
 
   return (
-    <ScreenContainer title="consultation.">
+    <ScreenContainer title="consultation." >
       <Pressable
         style={styles.flex}
         onPress={() => filterOpen && setFilterOpen(false)}

@@ -28,9 +28,29 @@ const getPosts = asyncHandler(async (req, res) => {
 });
 
 const meTooPost = asyncHandler(async (req, res) => {
+  const post = await PeerPost.findOneAndUpdate(
+    { _id: req.params.id, me_too_users: { $ne: req.demoUserId } },
+    { $inc: { me_too_count: 1 }, $push: { me_too_users: req.demoUserId } },
+    { new: true }
+  );
+  if (post) {
+    res.json(post);
+    return;
+  }
+
+  const existing = await PeerPost.findById(req.params.id);
+  if (!existing) {
+    res.status(404);
+    throw new Error('Post not found');
+  }
+  res.status(409);
+  throw new Error('You already supported this post');
+});
+
+const viewPost = asyncHandler(async (req, res) => {
   const post = await PeerPost.findByIdAndUpdate(
     req.params.id,
-    { $inc: { me_too_count: 1 } },
+    { $inc: { views: 1 } },
     { new: true }
   );
   if (!post) {
@@ -38,6 +58,20 @@ const meTooPost = asyncHandler(async (req, res) => {
     throw new Error('Post not found');
   }
   res.json(post);
+});
+
+const deletePost = asyncHandler(async (req, res) => {
+  const post = await PeerPost.findById(req.params.id);
+  if (!post) {
+    res.status(404);
+    throw new Error('Post not found');
+  }
+  if (post.user_id !== req.demoUserId) {
+    res.status(403);
+    throw new Error('You can only delete your own post');
+  }
+  await post.deleteOne();
+  res.json({ _id: req.params.id });
 });
 
 // const createComment = asyncHandler(async (req, res) => {
@@ -59,4 +93,4 @@ const meTooPost = asyncHandler(async (req, res) => {
 // });
 
 // module.exports = { createPost, getPosts, meTooPost, createComment };
-module.exports = { createPost, getPosts, meTooPost };
+module.exports = { createPost, getPosts, meTooPost, viewPost, deletePost };
