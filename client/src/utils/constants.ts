@@ -56,8 +56,8 @@ export const tags = [
   'Future',
   'Rant',
   'Gratitude',
-  'stress',
-  'support'
+  'Support',
+  'Expert Insights',
 ];
 
 export const STRESS_RELIEF_ACTIVITIES = [

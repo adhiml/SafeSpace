@@ -47,6 +47,26 @@ const meTooPost = asyncHandler(async (req, res) => {
   throw new Error('You already supported this post');
 });
 
+const undoMeTooPost = asyncHandler(async (req, res) => {
+  const post = await PeerPost.findOneAndUpdate(
+    { _id: req.params.id, me_too_users: req.demoUserId },
+    { $inc: { me_too_count: -1 }, $pull: { me_too_users: req.demoUserId } },
+    { new: true }
+  );
+  if (post) {
+    res.json(post);
+    return;
+  }
+
+  const existing = await PeerPost.findById(req.params.id);
+  if (!existing) {
+    res.status(404);
+    throw new Error('Post not found');
+  }
+  res.status(409);
+  throw new Error('You have not supported this post');
+});
+
 const viewPost = asyncHandler(async (req, res) => {
   const post = await PeerPost.findByIdAndUpdate(
     req.params.id,
@@ -93,4 +113,4 @@ const deletePost = asyncHandler(async (req, res) => {
 // });
 
 // module.exports = { createPost, getPosts, meTooPost, createComment };
-module.exports = { createPost, getPosts, meTooPost, viewPost, deletePost };
+module.exports = { createPost, getPosts, meTooPost, undoMeTooPost, viewPost, deletePost };

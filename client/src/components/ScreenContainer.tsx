@@ -14,29 +14,6 @@ interface ScreenContainerProps {
   floatingAction?: React.ReactNode;
 }
 
-// export const ScreenContainer: React.FC<ScreenContainerProps> = ({
-//   title,
-//   isHome,
-//   children,
-//   scroll = true,
-//   showHeader = true,
-// }) => (
-//   <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-//     {showHeader && <UniversalHeader title={title} isHome={isHome} />}
-//     {scroll ? (
-//       <ScrollView
-//         style={styles.flex}
-//         contentContainerStyle={styles.scroll}
-//         showsVerticalScrollIndicator={false}
-//       >
-//         <View style={styles.content}>{children}</View>
-//       </ScrollView>
-//     ) : (
-//       <View style={[styles.flex, styles.content]}>{children}</View>
-//     )}
-//   </SafeAreaView>
-// );
-
 export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   title,
   isHome,

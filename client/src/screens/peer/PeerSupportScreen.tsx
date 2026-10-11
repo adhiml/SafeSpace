@@ -15,7 +15,7 @@ import { Card } from "../../components/Card";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import * as peerService from "../../services/peerService";
-import { PeerPost } from "../../types";
+import { PeerPost, User } from "../../types";
 import { colors, palette, radius, spacing } from "../../utils/theme";
 import { tags } from "../../utils/constants";
 import { timeAgo } from "../../utils/date";
@@ -63,9 +63,13 @@ export const PeerSupportScreen: React.FC = () => {
   };
 
   const meToo = async (post: PeerPost) => {
-    if (userId && post.me_too_users?.includes(userId)) return;
+    const alreadyMarked = !!userId && post.me_too_users?.includes(userId);
     try {
-      await peerService.meTooPost(post._id);
+      if (alreadyMarked) {
+        await peerService.undoMeTooPost(post._id);
+      } else {
+        await peerService.meTooPost(post._id);
+      }
       await load();
     } catch (e) {
       Alert.alert("Error", e instanceof Error ? e.message : "Failed");
@@ -132,7 +136,7 @@ export const PeerSupportScreen: React.FC = () => {
   };
 
   return (
-    <ScreenContainer title="peer support." floatingAction={
+    <ScreenContainer title="peer." floatingAction={
       <FloatingButton
         onPress={() => setIsPanelOpen((prev) => !prev)}
       />}>
@@ -220,6 +224,7 @@ export const PeerSupportScreen: React.FC = () => {
           const expanded = expandedIds.has(item._id);
           const own = isOwnPost(item);
           const hasMeToo = !!userId && item.me_too_users?.includes(userId);
+          // console.log("Post item:", item.content, "Post anonymous name:", item.user_id.anonymous_name); 
           return (
             <TouchableOpacity
               activeOpacity={0.85}
@@ -252,7 +257,7 @@ export const PeerSupportScreen: React.FC = () => {
                       color={colors.primary}
                     />
                   </View>
-                  <Text style={styles.userHandle}>@Anonymous Peer</Text>
+                  <Text style={styles.userHandle}>@{(item.user_id as User).anonymous_name}</Text>
                 </View>
 
                 <Text
@@ -288,7 +293,6 @@ export const PeerSupportScreen: React.FC = () => {
                     )}
                     <TouchableOpacity
                       style={[styles.btnMeToo, hasMeToo && styles.btnMeTooActive]}
-                      disabled={hasMeToo}
                       onPress={() => {
                         meToo(item);
                       }}
