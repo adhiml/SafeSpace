@@ -1,5 +1,6 @@
 const MoodEntry = require('../models/MoodEntry');
 const asyncHandler = require('../utils/asyncHandler');
+const { getDailyStress } = require('../services/stressAggregationService');
 
 const {
   buildDailyStats,
@@ -58,6 +59,11 @@ const getMoodAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
+const getDailyStressSummary = asyncHandler(async (req, res) => {
+  const date = req.query.date ? new Date(req.query.date) : new Date();
+  res.json(await getDailyStress(req.demoUserId, date));
+});
+
 const getCounsellorAnalytics = asyncHandler(async (req, res) => {
   const entries = await MoodEntry.find()
     .sort({ created_at: -1 })
@@ -82,4 +88,4 @@ const getCounsellorAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createMood, getMoods, getMoodAnalytics, getCounsellorAnalytics };
+module.exports = { createMood, getMoods, getMoodAnalytics, getCounsellorAnalytics, getDailyStressSummary };

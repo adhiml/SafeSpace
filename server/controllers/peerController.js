@@ -1,7 +1,16 @@
 const PeerPost = require('../models/PeerPost');
 // const PeerComment = require('../models/PeerComment');
-const { analyzeSentiment } = require('../services/sentimentService');
+const { analyzeText, legacyScore } = require('../services/sentimentService');
+const { getDailyStress, applyReview } = require('../services/stressAggregationService');
 const asyncHandler = require('../utils/asyncHandler');
+
+// The AI stress score is private: only the author may see it on a post.
+const forViewer = (post, viewerId) => {
+  const obj = post.toObject ? post.toObject() : post;
+  const authorId = String(obj.user_id?._id ?? obj.user_id);
+  if (authorId !== String(viewerId)) delete obj.stress_analysis;
+  return obj;
+};
 
 const createPost = asyncHandler(async (req, res) => {
   const { content, tags } = req.body;
@@ -9,14 +18,17 @@ const createPost = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('content is required');
   }
+  // Peer posts are always analysed (no opt-out).
+  const analysis = await analyzeText(content);
   const post = await PeerPost.create({
     user_id: req.demoUserId,
     content,
     tags: tags || [],
-    sentiment_score: analyzeSentiment(content),
+    sentiment_score: legacyScore(analysis),
+    stress_analysis: analysis,
   });
   const populated = await PeerPost.findById(post._id).populate('user_id', 'anonymous_name user_name');
-  res.status(201).json(populated);
+  res.status(201).json(forViewer(populated, req.demoUserId));
 });
 
 const getPosts = asyncHandler(async (req, res) => {
@@ -24,7 +36,21 @@ const getPosts = asyncHandler(async (req, res) => {
     .sort({ created_at: -1 })
     .populate('user_id', 'anonymous_name user_name')
     .limit(50);
-  res.json(posts);
+  res.json(posts.map((p) => forViewer(p, req.demoUserId)));
+});
+
+const reviewPostStress = asyncHandler(async (req, res) => {
+  const post = await PeerPost.findOne({ _id: req.params.id, user_id: req.demoUserId });
+  if (!post) {
+    res.status(404);
+    throw new Error('Post not found');
+  }
+  if (!applyReview(post, req.body.action, req.body.score)) {
+    res.status(400);
+    throw new Error('Invalid stress review');
+  }
+  await post.save();
+  res.json({ item: forViewer(post, req.demoUserId), dailyStress: await getDailyStress(req.demoUserId, post.created_at) });
 });
 
 const meTooPost = asyncHandler(async (req, res) => {
@@ -34,7 +60,7 @@ const meTooPost = asyncHandler(async (req, res) => {
     { new: true }
   );
   if (post) {
-    res.json(post);
+    res.json(forViewer(post, req.demoUserId));
     return;
   }
 
@@ -54,7 +80,7 @@ const undoMeTooPost = asyncHandler(async (req, res) => {
     { new: true }
   );
   if (post) {
-    res.json(post);
+    res.json(forViewer(post, req.demoUserId));
     return;
   }
 
@@ -77,7 +103,7 @@ const viewPost = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Post not found');
   }
-  res.json(post);
+  res.json(forViewer(post, req.demoUserId));
 });
 
 const deletePost = asyncHandler(async (req, res) => {
@@ -113,4 +139,4 @@ const deletePost = asyncHandler(async (req, res) => {
 // });
 
 // module.exports = { createPost, getPosts, meTooPost, createComment };
-module.exports = { createPost, getPosts, meTooPost, undoMeTooPost, viewPost, deletePost };
+module.exports = { createPost, getPosts, meTooPost, undoMeTooPost, viewPost, deletePost, reviewPostStress };

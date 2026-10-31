@@ -1,5 +1,5 @@
 const express = require('express');
-const { createPost, getPosts, meTooPost, undoMeTooPost, viewPost, deletePost } = require('../controllers/peerController');
+const { createPost, getPosts, meTooPost, undoMeTooPost, viewPost, deletePost, reviewPostStress } = require('../controllers/peerController');
 
 const router = express.Router();
 
@@ -9,5 +9,6 @@ router.post('/posts/:id/me-too', meTooPost);
 router.delete('/posts/:id/me-too', undoMeTooPost);
 router.post('/posts/:id/view', viewPost);
 router.delete('/posts/:id', deletePost);
+router.patch('/posts/:id/stress-review', reviewPostStress);
 
 module.exports = router;

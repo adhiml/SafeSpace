@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const stressAnalysisSchema = require('./stressAnalysisSchema');
 
 const journalSchema = new mongoose.Schema(
   {
@@ -7,6 +8,7 @@ const journalSchema = new mongoose.Schema(
     content: { type: String, required: true },
     is_sentiment_enabled: { type: Boolean, default: false },
     sentiment_score: { type: Number, default: 0 },
+    stress_analysis: { type: stressAnalysisSchema, default: undefined },
     tags: [{ type: String }],
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
