@@ -5,11 +5,12 @@ import { ChatScreen } from '../screens/consultation/ChatScreen';
 import { JournalEditorScreen } from '../screens/journal/JournalEditorScreen';
 import { MoodCheckInScreen } from '../screens/mood/MoodCheckInScreen';
 import { StressCausesScreen } from '../screens/mood/StressCausesScreen';
-import { SettingsWrapper } from '../screens/shared/SettingsWrapper';
+import { SettingsScreen } from '../screens/shared/SettingsScreen';
 import { NotificationsScreen } from '../screens/notification/NotificationsScreen';
 import { StudentStackParamList } from '../types';
 import { StudentTabNavigator } from './StudentTabNavigator';
 import { ProfileScreen } from '../screens/shared/ProfileScreen';
+import { ChangePasswordScreen } from '../screens/shared/ChangePasswordScreen';
 
 // this code tell "stack" what can go in it, not the sequence
 
@@ -27,11 +28,12 @@ export const StudentStackNavigator: React.FC = () => {
       <Stack.Screen name="StudentTabs" component={StudentTabNavigator} />
       <Stack.Screen name="MoodCheckIn" component={MoodCheckInScreen} />
       <Stack.Screen name="StressCauses" component={StressCausesScreen} />
-      <Stack.Screen name="Settings" component={SettingsWrapper} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="JournalEditor" component={JournalEditorScreen} />
       <Stack.Screen name="Consult" component={ChatScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
     </Stack.Navigator>
   );
 };

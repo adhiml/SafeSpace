@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -15,15 +14,11 @@ import { Appointment } from '../../types';
 import { deriveStatus } from "../../constants/appointmentStatus";
 import { colors, palette, radius, spacing } from '../../utils/theme';
 import { Card } from '../../components/Card';
+import { StudentRequestCard } from '../../components/StudentRequestCard';
+import { currentWorkWeek, isWeekend } from '../../utils/date';
 
-const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr'];
-const SLOT_HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
-
-const studentLabel = (a: Appointment) => {
-  if (a.is_anonymous) return 'Anonymous student';
-  const s = a.student_user_id;
-  return typeof s === 'object' && s !== null ? s.user_name : 'Student';
-};
+// Indexed by Date.getDay() (0 = Sunday)
+const DAY_ABBR = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 const isSameDay = (d1: Date, d2: Date) => {
   return (
@@ -37,7 +32,11 @@ export const CounsellorHomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { profile } = useRole();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  // Monday–Friday of this week (the coming week on a weekend)
+  const dateStrip = useMemo(() => currentWorkWeek(), []);
+  const [selectedDate, setSelectedDate] = useState<Date>(() =>
+    isWeekend(new Date()) ? dateStrip[0] : new Date()
+  );
 
   const load = async () => {
     try {
@@ -84,33 +83,25 @@ export const CounsellorHomeScreen: React.FC = () => {
     }).length;
   }, [appointments]);
 
-  // Generate date strip (-2 days to +5 days)
-  const dateStrip = useMemo(() => {
-    const dates: Date[] = [];
-    const base = new Date();
-    for (let i = -2; i <= 5; i++) {
-      const d = new Date(base);
-      d.setDate(base.getDate() + i);
-      dates.push(d);
-    }
-    return dates;
-  }, []);
-
-  // Filter appointments for schedule timeline based on selected date
+  // Only confirmed sessions belong on the home schedule (requests are handled in Consultations)
   const selectedDayAppointments = useMemo(() => {
-    return appointments.filter((a) => {
-      const apptDate = new Date(a.appointment_datetime);
-      return isSameDay(apptDate, selectedDate) && a.status !== 'cancelled';
-    });
+    return appointments
+      .filter((a) => {
+        const confirmed = a.status === 'approved' || a.status === 'completed';
+        return confirmed && isSameDay(new Date(a.appointment_datetime), selectedDate);
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.appointment_datetime).getTime() - new Date(b.appointment_datetime).getTime()
+      );
   }, [appointments, selectedDate]);
 
-  const handleStatus = async (id: string, status: Appointment['status']) => {
-    try {
-      await consultationService.updateAppointmentStatus(id, status);
-      await load();
-    } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Update failed');
-    }
+  const openChat = (appt: Appointment) => {
+    navigation.getParent()?.navigate('Consult', {
+      appointmentId: appt._id,
+      title: 'Counselling Chat',
+      isAnonymous: appt.is_anonymous,
+    });
   };
 
   const name = profile
@@ -197,12 +188,7 @@ export const CounsellorHomeScreen: React.FC = () => {
 
         {/* Calendar Strip Selector */}
         <Text style={styles.sectionTitleStyle}>Select Date</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.dateStrip}
-          contentContainerStyle={styles.dateStripContent}
-        >
+        <View style={styles.dateStrip}>
           {dateStrip.map((date) => {
             const active = isSameDay(date, selectedDate);
             const isTodayDate = isSameDay(date, new Date());
@@ -215,7 +201,7 @@ export const CounsellorHomeScreen: React.FC = () => {
                 style={[styles.dateChip, active && styles.dateChipActive]}
               >
                 <Text style={[styles.dateDay, active && styles.dateTextActive]}>
-                  {WEEKDAYS[date.getDay()]}
+                  {DAY_ABBR[date.getDay()]}
                 </Text>
                 <Text style={[styles.dateNum, active && styles.dateTextActive]}>
                   {date.getDate()}
@@ -231,7 +217,7 @@ export const CounsellorHomeScreen: React.FC = () => {
               </TouchableOpacity>
             );
           })}
-        </ScrollView>
+        </View>
 
         {/* Schedule Timeline Header */}
         <View style={styles.sectionHeaderRow}>
@@ -245,119 +231,39 @@ export const CounsellorHomeScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Schedule Timeline Grid */}
+        {/* Confirmed sessions only: no rows for unbooked hours */}
         <View style={styles.timelineContainer}>
-          {SLOT_HOURS.map((hour) => {
-            const slotAppointments = selectedDayAppointments.filter((a) => {
-              const apptHour = new Date(a.appointment_datetime).getHours();
-              return apptHour === hour;
-            });
+          {selectedDayAppointments.length === 0 ? (
+            <Text style={styles.emptyText}>No confirmed sessions on this day.</Text>
+          ) : (
+            selectedDayAppointments.map((appt) => {
+              const hour = new Date(appt.appointment_datetime).getHours();
 
-            const hourFormatted = `${hour.toString().padStart(2, '0')}:00`;
+              return (
+                <View key={appt._id} style={styles.timelineRow}>
+                  {/* Left Hour Axis */}
+                  <View style={styles.timeAxis}>
+                    <Text style={styles.timeText}>{hour.toString().padStart(2, '0')}:00</Text>
+                  </View>
 
-            return (
-              <View key={hour} style={styles.timelineRow}>
-                {/* Left Hour Axis */}
-                <View style={styles.timeAxis}>
-                  <Text style={styles.timeText}>{hourFormatted}</Text>
+                  {/* Vertical Timeline Divider Line */}
+                  <View style={styles.verticalTimelineLine} />
+
+                  {/* Right Content Area */}
+                  <View style={styles.timelineContent}>
+                    {/* Same card as the Consultations page, without its footer; tap to open the chat */}
+                    <TouchableOpacity activeOpacity={0.85} onPress={() => openChat(appt)}>
+                      <StudentRequestCard item={appt} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-
-                {/* Vertical Timeline Divider Line */}
-                <View style={styles.verticalTimelineLine} />
-
-                {/* Right Content Area */}
-                <View style={styles.timelineContent}>
-                  {slotAppointments.length === 0 ? (
-                    <View style={styles.emptySlotContainer}>
-                      <View style={styles.timelineDot} />
-                      <View style={styles.slotDashedLine} />
-                    </View>
-                  ) : (
-                    slotAppointments.map((appt) => {
-                      const uiStatus = deriveStatus(appt);
-                      const isPending = appt.status === 'pending';
-
-                      return (
-                        <View key={appt._id} style={styles.apptCard}>
-                          <View style={styles.apptCardHeader}>
-                            <View style={styles.titleRow}>
-                              <Text style={styles.studentName}>
-                                {studentLabel(appt)}
-                              </Text>
-                              {appt.is_anonymous && (
-                                <View style={styles.anonTag}>
-                                  <Icon source="shield-check" size={12} color={colors.primary} />
-                                  <Text style={styles.anonTagText}>Anon</Text>
-                                </View>
-                              )}
-                            </View>
-
-                            <View style={[styles.statusBadge, { backgroundColor: getStatusBg(uiStatus) }]}>
-                              <Text style={[styles.statusBadgeText, { color: getStatusText(uiStatus) }]}>
-                                {uiStatus}
-                              </Text>
-                            </View>
-                          </View>
-
-                          {appt.session_details ? (
-                            <Text style={styles.sessionDetails} numberOfLines={2}>
-                              {appt.session_details}
-                            </Text>
-                          ) : null}
-
-                          {/* Quick Action Buttons for Pending Items */}
-                          {isPending && (
-                            <View style={styles.actionRow}>
-                              <TouchableOpacity
-                                style={styles.approveBtn}
-                                activeOpacity={0.8}
-                                onPress={() => handleStatus(appt._id, 'approved')}
-                              >
-                                <Text style={styles.approveBtnText}>Approve</Text>
-                              </TouchableOpacity>
-
-                              <TouchableOpacity
-                                style={styles.declineBtn}
-                                activeOpacity={0.8}
-                                onPress={() => handleStatus(appt._id, 'cancelled')}
-                              >
-                                <Text style={styles.declineBtnText}>Decline</Text>
-                              </TouchableOpacity>
-                            </View>
-                          )}
-                        </View>
-                      );
-                    })
-                  )}
-                </View>
-              </View>
-            );
-          })}
+              );
+            })
+          )}
         </View>
       </ScrollView>
     </ScreenContainer>
   );
-};
-
-// Helper status colors using theme palette
-const getStatusBg = (status: string) => {
-  switch (status) {
-    case 'upcoming': return palette.okBg;
-    case 'active': return palette.activeBg;
-    case 'pending': return palette.warnBg;
-    case 'cancelled': return palette.cancelledBg;
-    default: return palette.borderSoft;
-  }
-};
-
-const getStatusText = (status: string) => {
-  switch (status) {
-    case 'upcoming': return palette.okText;
-    case 'active': return palette.activeText;
-    case 'pending': return palette.warnText;
-    case 'cancelled': return palette.cancelledText;
-    default: return palette.textMuted;
-  }
 };
 
 const styles = StyleSheet.create({
@@ -458,15 +364,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   dateStrip: {
-    marginHorizontal: -spacing.md,
+    flexDirection: 'row',
+    gap: spacing.xs,
     marginBottom: spacing.md,
   },
-  dateStripContent: {
-    paddingHorizontal: spacing.md,
-    gap: spacing.xs,
-  },
   dateChip: {
-    width: 52,
+    flex: 1,
     height: 68,
     borderRadius: radius.md,
     backgroundColor: colors.surface,
@@ -515,6 +418,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.primary,
   },
+  emptyText: {
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingVertical: spacing.lg,
+  },
   timelineContainer: {
     marginTop: spacing.xs,
   },
@@ -539,111 +448,5 @@ const styles = StyleSheet.create({
   timelineContent: {
     flex: 1,
     paddingBottom: spacing.sm,
-  },
-  emptySlotContainer: {
-    height: 32,
-    justifyContent: 'center',
-  },
-  timelineDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: palette.border,
-    position: 'absolute',
-    left: -spacing.sm - 3,
-    top: 6,
-  },
-  slotDashedLine: {
-    height: 1,
-    backgroundColor: palette.borderSoft,
-    width: '100%',
-  },
-  apptCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.sm + 2,
-    borderWidth: 1,
-    borderColor: palette.border,
-    marginBottom: spacing.xs,
-    shadowColor: palette.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  apptCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  studentName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  anonTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    backgroundColor: colors.primaryLight,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-  },
-  anonTagText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  statusBadge: {
-    paddingHorizontal: spacing.xs + 4,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-  },
-  statusBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'capitalize',
-  },
-  sessionDetails: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-  },
-  approveBtn: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-  },
-  approveBtnText: {
-    color: palette.white,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  declineBtn: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: palette.cancelledText,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-  },
-  declineBtnText: {
-    color: palette.cancelledText,
-    fontSize: 12,
-    fontWeight: '600',
   },
 });

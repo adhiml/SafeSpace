@@ -21,6 +21,7 @@ import { tags } from "../../utils/constants";
 import { timeAgo } from "../../utils/date";
 import { useRole } from "../../context/RoleContext";
 import { FloatingButton } from "../../components/FloatingButton";
+import { StressReview, hasStressTag } from "../../components/stress/StressReview";
 
 export const PeerSupportScreen: React.FC = () => {
   const { userId } = useRole();
@@ -214,6 +215,7 @@ export const PeerSupportScreen: React.FC = () => {
           <PrimaryButton
             label={loading ? "Posting..." : "Post"}
             onPress={submit}
+            loading={loading}
           />
         </Card>)}
       <FlatList
@@ -266,6 +268,24 @@ export const PeerSupportScreen: React.FC = () => {
                 >
                   {item.content}
                 </Text>
+
+                {own && hasStressTag(item.stress_analysis) && (
+                  <View style={styles.privateStress}>
+                    <StressReview
+                      analysis={item.stress_analysis}
+                      onRefresh={load}
+                      info="Only you can see this on your own post. Other students never see it. Peer posts are always analyzed."
+                      onReview={async (action, score) => {
+                        const res = await peerService.reviewPostStress(item._id, action, score);
+                        setPosts((prev) =>
+                          prev.map((p) =>
+                            p._id === item._id ? { ...p, stress_analysis: res.item.stress_analysis } : p,
+                          ),
+                        );
+                      }}
+                    />
+                  </View>
+                )}
 
                 <View style={styles.cardFooter}>
                   <View style={styles.viewsCount}>
@@ -474,6 +494,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
 
+  privateStress: { marginTop: spacing.sm },
   cardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",

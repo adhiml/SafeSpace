@@ -1,6 +1,6 @@
 const MoodEntry = require('../models/MoodEntry');
 const asyncHandler = require('../utils/asyncHandler');
-const { getDailyStress } = require('../services/stressAggregationService');
+const { getDailyStress, applyTextStress } = require('../services/stressAggregationService');
 
 const {
   buildDailyStats,
@@ -37,8 +37,8 @@ const getMoodAnalytics = asyncHandler(async (req, res) => {
     .sort({ created_at: -1 })
     .limit(60);
 
-  // STEP 1: normalize
-  const daily = buildDailyStats(entries);
+  // STEP 1: normalize (stress = check-in blended with the student's writing, same as the daily card)
+  const daily = await applyTextStress(req.demoUserId, entries, buildDailyStats(entries));
 
   // STEP 2: aggregate
   const weekly = buildWeeklyStats(daily);

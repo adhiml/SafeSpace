@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { Alert, StyleSheet, View, Text, TouchableOpacity, TextInput, Switch } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
+import { InfoTip } from '../../components/InfoTip';
+import { StressReview, hasStressTag } from '../../components/stress/StressReview';
 import * as journalService from '../../services/journalService';
-import { StudentStackParamList } from '../../types';
+import { Journal, StudentStackParamList } from '../../types';
 import { colors, spacing, radius, palette } from '../../utils/theme';
 
 type Props = NativeStackScreenProps<StudentStackParamList, 'JournalEditor'>;
@@ -17,6 +19,8 @@ export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [consent, setConsent] = useState(false); // opt-in AI analysis for this journal
+  const [saved, setSaved] = useState<Journal | null>(null); // set after save when analysis is shown
 
   // Load existing journal
   useEffect(() => {
@@ -28,6 +32,7 @@ export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
         setTitle(j.title);
         setContent(j.content);
         setTags(j.tags || []);
+        setConsent(!!j.is_sentiment_enabled);
       }
     });
   }, [journalId]);
@@ -61,21 +66,54 @@ export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
         title: title.trim(),
         content: content.trim(),
         tags,
+        is_sentiment_enabled: consent,
       };
 
-      if (journalId) {
-        await journalService.updateJournal(journalId, payload);
-      } else {
-        await journalService.createJournal(payload);
-      }
+      const result = journalId
+        ? await journalService.updateJournal(journalId, payload)
+        : await journalService.createJournal(payload);
 
-      navigation.goBack();
+      // Show the AI reading so the student can confirm or correct it; otherwise just leave.
+      if (consent && hasStressTag(result.stress_analysis)) {
+        setSaved(result);
+      } else {
+        navigation.goBack();
+      }
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Save failed');
     } finally {
       setLoading(false);
     }
   };
+
+  if (saved) {
+    return (
+      <ScreenContainer title="entry saved.">
+        <View style={styles.analysisCard}>
+          <Text style={styles.analysisHeading}>How this entry reads</Text>
+          <Text style={styles.analysisSub}>
+            {saved.stress_analysis?.status === 'success'
+              ? `Sentiment: ${saved.stress_analysis.sentiment}`
+              : 'The AI is reading your entry. You can leave this page; the result will be waiting on your journal.'}
+          </Text>
+          <StressReview
+            analysis={saved.stress_analysis}
+            info="Only you can see this result."
+            onRefresh={async () => {
+              const list = await journalService.getJournals();
+              const fresh = list.find((j) => j._id === saved._id);
+              if (fresh) setSaved(fresh);
+            }}
+            onReview={async (action, score) => {
+              const res = await journalService.reviewJournalStress(saved._id, action, score);
+              setSaved(res.item);
+            }}
+          />
+        </View>
+        <PrimaryButton label="Done" onPress={() => navigation.goBack()} />
+      </ScreenContainer>
+    );
+  }
 
   return (
     <ScreenContainer title={journalId ? 'edit journal.' : 'new journal.'}>
@@ -127,6 +165,18 @@ export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
         style={styles.contentInput}
       />
 
+      {/* Opt-in AI analysis */}
+      <View style={styles.consentRow}>
+        <View style={styles.consentLabel}>
+          <Text style={styles.consentTitle}>Analyze this entry with AI</Text>
+          <InfoTip
+            title="Private AI analysis"
+            text="Optional. Your entry is read by SafeSpace's own AI model running on our server. It is never sent to outside AI services. Only you can see the result, and you can correct it any time. Turn this off and nothing is analyzed."
+          />
+        </View>
+        <Switch value={consent} onValueChange={setConsent} trackColor={{ true: colors.primary }} />
+      </View>
+
       {/* Save */}
       <PrimaryButton label="Save entry" onPress={save} loading={loading} />
     </ScreenContainer>
@@ -134,6 +184,18 @@ export const JournalEditorScreen: React.FC<Props> = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  consentRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.md },
+  consentTitle: { fontSize: 14, fontWeight: '700', color: colors.text },
+  consentLabel: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  analysisCard: {
+    backgroundColor: palette.surfaceAlt,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  analysisHeading: { fontSize: 16, fontWeight: '700', color: colors.text },
+  analysisSub: { fontSize: 13, color: colors.textMuted },
   titleInput: {
     marginBottom: spacing.md,
     backgroundColor: palette.surfaceAlt,

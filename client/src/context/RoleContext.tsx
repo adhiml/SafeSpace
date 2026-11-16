@@ -1,7 +1,24 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { DEFAULT_PROFILES, ROLE_USER_IDS } from '../constants/roleUsers';
 import { setActiveDemoUserId } from '../api/demoUserId';
+import * as userService from '../services/userService';
 import { AppRole, RoleProfile } from '../types';
+
+/** What the server stores, mapped onto the app's profile shape. */
+const fromServer = (u: userService.UserProfileDto): Partial<RoleProfile> => ({
+  user_name: u.user_name,
+  anonymous_name: u.anonymous_name,
+  email: u.email,
+  gender: u.gender,
+  faculty: u.faculty,
+  specialization: u.specialization,
+  displayTitle: u.display_title || undefined,
+});
+
+/** The fields the profile screen can save, in the app's naming. */
+export type ProfileFormValues = Partial<
+  Pick<RoleProfile, 'user_name' | 'anonymous_name' | 'gender' | 'faculty' | 'specialization' | 'displayTitle'>
+>;
 
 interface RoleContextValue {
   role: AppRole | null;
@@ -10,7 +27,8 @@ interface RoleContextValue {
   setRole: (role: AppRole) => void;
   switchRole: (role: AppRole) => void;
   clearRole: () => void;
-  updateProfile: (patch: Partial<RoleProfile>) => void;
+  /** Saves profile text to the server so every screen and other users see it. Throws on validation errors. */
+  saveProfile: (values: ProfileFormValues) => Promise<void>;
   isCounsellor: boolean;
   isStudent: boolean;
 }
@@ -47,8 +65,32 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfile(null);
   }, []);
 
-  const updateProfile = useCallback((patch: Partial<RoleProfile>) => {
-    setProfile((prev) => (prev ? { ...prev, ...patch } : prev));
+  // The server is the source of truth: load the saved profile whenever a role is chosen,
+  // so edits survive restarts and role switches (the defaults above are only a first paint).
+  useEffect(() => {
+    if (!role) return;
+    let cancelled = false;
+    userService
+      .getMyProfile()
+      .then((user) => {
+        if (!cancelled) setProfile((prev) => (prev ? { ...prev, ...fromServer(user) } : prev));
+      })
+      .catch(() => undefined); // offline: keep the defaults
+    return () => {
+      cancelled = true;
+    };
+  }, [role]);
+
+  const saveProfile = useCallback(async (values: ProfileFormValues) => {
+    const user = await userService.updateMyProfile({
+      user_name: values.user_name,
+      anonymous_name: values.anonymous_name,
+      gender: values.gender,
+      faculty: values.faculty,
+      specialization: values.specialization,
+      display_title: values.displayTitle,
+    });
+    setProfile((prev) => (prev ? { ...prev, ...fromServer(user) } : prev));
   }, []);
 
   const value = useMemo(
@@ -59,11 +101,11 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRole,
       switchRole,
       clearRole,
-      updateProfile,
+      saveProfile,
       isCounsellor: role === 'counsellor1' || role === 'counsellor2',
       isStudent: role === 'student1' || role === 'student2',
     }),
-    [role, profile, setRole, switchRole, clearRole, updateProfile]
+    [role, profile, setRole, switchRole, clearRole, saveProfile]
   );
 
   return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;

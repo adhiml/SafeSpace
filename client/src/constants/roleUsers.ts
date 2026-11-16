@@ -14,7 +14,6 @@ export const DEFAULT_PROFILES: Record<AppRole, RoleProfile> = {
     displayTitle: 'Dr.',
     specialization: 'Academic stress & anxiety',
     faculty: 'Student Wellness Centre',
-    profile_picture: '',
   },
   counsellor2: {
     userId: 'counsellor_002',
@@ -22,21 +21,18 @@ export const DEFAULT_PROFILES: Record<AppRole, RoleProfile> = {
     displayTitle: 'Dr.',
     specialization: 'Mental health & wellbeing',
     faculty: 'Student Wellness Centre',
-    profile_picture: '',
   },
   student1: {
     userId: 'user_001',
     user_name: 'Jamie Chen',
     anonymous_name: 'Anonymous2048',
     faculty: 'Computer Science',
-    profile_picture: '',
   },
   student2: {
     userId: 'user_002',
     user_name: 'Sam Rivera',
     anonymous_name: 'Anonymous7312',
     faculty: 'Psychology',
-    profile_picture: '',
   },
 };
 

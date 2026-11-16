@@ -12,10 +12,11 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenContainer } from "../../components/ScreenContainer";
 import * as consultationService from "../../services/consultationService";
-import { Appointment, CounsellorStackParamList, User } from "../../types";
+import { Appointment, CounsellorStackParamList } from "../../types";
 import { palette, spacing } from "../../utils/theme";
-import { WEEKDAYS } from "../../utils/date";
-import { Avatar } from "../../components/Avatar";
+import { WEEKDAYS, nextWorkdays } from "../../utils/date";
+import { StudentRequestCard } from "../../components/StudentRequestCard";
+import { DevChatButton } from "../../components/DevChatButton";
 import {
   StatusFilter,
   STATUS_FILTERS,
@@ -39,37 +40,8 @@ const isSameDay = (a: Date, b: Date) =>
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate();
 
-/** The five selectable days, starting today. */
-const buildDateStrip = () => {
-  const today = new Date();
-  return Array.from({ length: 5 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  });
-};
-
-/** Student identity to display for a card, respecting anonymity. */
-const studentFor = (item: Appointment) => {
-  if (item.is_anonymous) {
-    return {
-      name: "Anonymous student",
-      subtitle: item.session_details?.trim() || "No details provided",
-      profile_picture: undefined as string | undefined,
-    };
-  }
-
-  const ref = item.student_user_id as User | string;
-  const name = typeof ref !== "string" ? ref.user_name : "Student";
-  const profile_picture = typeof ref !== "string" ? ref.profile_picture : undefined;
-
-  return {
-    name,
-    subtitle: item.session_details?.trim() || "No details provided",
-    profile_picture,
-  };
-};
+/** The next five selectable weekdays (Mon–Fri only), starting today. */
+const buildDateStrip = () => nextWorkdays(5);
 
 /* ------------------------------------------------------------------ */
 /* Screen                                                              */
@@ -155,7 +127,8 @@ export const CounsellorMessagesScreen: React.FC = () => {
       await consultationService.updateAppointmentStatus(id, "approved");
       await load();
     } catch (error) {
-      Alert.alert("Error", "Failed to approve appointment");
+      Alert.alert("Error", error instanceof Error ? error.message : "Failed to approve appointment");
+      await load(); // another request for this slot may have just been confirmed
     }
   };
 
@@ -166,6 +139,11 @@ export const CounsellorMessagesScreen: React.FC = () => {
         onPress={() => filterOpen && setFilterOpen(false)}
       >
         <Text style={styles.subtitle}>Manage your upcoming and pending sessions</Text>
+        <DevChatButton
+          onOpen={(appointmentId) =>
+            navigation.getParent()?.navigate("Consult", { appointmentId, title: "Dev chatroom", isAnonymous: false })
+          }
+        />
 
         {/* Date strip */}
         <View style={styles.dateStrip}>
@@ -243,8 +221,6 @@ export const CounsellorMessagesScreen: React.FC = () => {
             visible.map((item, index) => {
               const status = deriveStatus(item);
               const tone = statusStyles[status];
-              const student = studentFor(item);
-              const showAsAnon = item.is_anonymous;
               const isPending = item.status === "pending";
               const start = new Date(item.appointment_datetime);
 
@@ -257,59 +233,7 @@ export const CounsellorMessagesScreen: React.FC = () => {
                   </View>
 
                   {/* Card */}
-                  <View style={styles.card}>
-                    <View style={styles.cardTop}>
-                      <View style={[styles.badge, { backgroundColor: tone.bg }]}>
-                        <Icon source={tone.icon} size={11} color={tone.text} />
-                        <Text style={[styles.badgeText, { color: tone.text }]}>
-                          {tone.label}
-                        </Text>
-                      </View>
-
-                      <View
-                        style={[
-                          styles.identityTag,
-                          {
-                            backgroundColor: showAsAnon
-                              ? palette.accentSoft
-                              : palette.borderSoft,
-                          },
-                        ]}
-                      >
-                        <Icon
-                          source={showAsAnon ? "shield-outline" : "account-outline"}
-                          size={10}
-                          color={showAsAnon ? palette.accentDark : palette.textSoft}
-                        />
-                        <Text
-                          style={[
-                            styles.identityText,
-                            {
-                              color: showAsAnon
-                                ? palette.accentDark
-                                : palette.textSoft,
-                            },
-                          ]}
-                        >
-                          {showAsAnon ? "Anonymous" : "Standard"}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.studentRow}>
-                      <View style={styles.avatar}>
-                        <Avatar uri={student.profile_picture} size={30} />
-                      </View>
-                      <View style={styles.flexShrink}>
-                        <Text style={styles.studentName} numberOfLines={1}>
-                          {student.name}
-                        </Text>
-                        <Text style={styles.studentTitle} numberOfLines={1}>
-                          {student.subtitle}
-                        </Text>
-                      </View>
-                    </View>
-
+                  <StudentRequestCard item={item}>
                     {isPending && (
                       <View style={styles.actionRow}>
                         <TouchableOpacity
@@ -363,7 +287,7 @@ export const CounsellorMessagesScreen: React.FC = () => {
                         </TouchableOpacity>
                       </View>
                     </View>
-                  </View>
+                  </StudentRequestCard>
                 </View>
               );
             })
@@ -483,59 +407,8 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
 
-  card: {
-    flex: 1,
-    backgroundColor: palette.white,
-    borderWidth: 1,
-    borderColor: palette.borderSoft,
-    borderRadius: 18,
-    padding: 14,
-    marginBottom: spacing.md,
-    shadowColor: palette.text,
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
-  },
-  cardTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 7,
-  },
-  badgeText: { fontSize: 10, fontWeight: "800" },
-  identityTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-  },
-  identityText: { fontSize: 9, fontWeight: "800", textTransform: "uppercase" },
 
-  studentRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: palette.accentSoft,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: palette.surfaceAlt,
-    resizeMode: "cover",
-  },
-  studentName: { fontSize: 13, fontWeight: "700", color: palette.text },
-  studentTitle: { fontSize: 11, color: palette.textFaint, marginTop: 1 },
+
 
   actionRow: {
     flexDirection: "row",

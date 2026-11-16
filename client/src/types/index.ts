@@ -16,21 +16,14 @@ export interface User { // holds core
   user_name: string;
   anonymous_name?: string;
   email?: string;
+  display_title?: string; // counsellors only, e.g. "Dr."
   role: UserRole;
-  profile_picture?: string;
   gender?: string;
   faculty?: string;
   created_at?: string;
 }
 
 export const default_avatar = require ('../assets/images/user.png');
-
-export const getAvatarSource = (profile_picture?: string) => {
-  if (profile_picture && profile_picture.trim() !== '') {
-    return { uri: profile_picture };
-  }
-  return default_avatar;
-};
 
 export interface MoodEntry {
   _id: string;
@@ -99,6 +92,33 @@ export interface CounsellorAnalytics {
   }[];
 }
 
+export type StressReviewState = 'pending' | 'affirmed' | 'corrected';
+
+// AI text analysis. Only present on your own journals/posts (the server strips it from others' posts).
+export interface StressAnalysis {
+  status: 'pending' | 'success' | 'unavailable';
+  sentiment?: 'positive' | 'neutral' | 'negative';
+  ai_score?: number;
+  confidence?: 'low' | 'medium' | 'high';
+  review: StressReviewState;
+  user_score?: number;
+}
+
+export interface DailyStress {
+  explicit: number | null;
+  text: number | null;
+  final: number | null;
+  band: string | null;
+  source: 'combined' | 'checkin-only' | 'text-only' | 'none';
+  textCount: number;
+  hasUnreviewed: boolean;
+}
+
+export interface StressReviewResult<T> {
+  item: T;
+  dailyStress: DailyStress;
+}
+
 export interface Journal {
   _id: string;
   user_id: string;
@@ -106,6 +126,7 @@ export interface Journal {
   content: string;
   is_sentiment_enabled: boolean;
   sentiment_score: number;
+  stress_analysis?: StressAnalysis;
   tags: string[];
   created_at: string;
   updated_at: string;
@@ -116,6 +137,7 @@ export interface PeerPost {
   user_id: User | string;
   content: string;
   sentiment_score: number;
+  stress_analysis?: StressAnalysis;
   tags: string[];
   me_too_count: number;
   me_too_users: string[];
@@ -139,6 +161,7 @@ export interface Appointment {
   session_details: string;
   status: 'pending' | 'approved' | 'completed' | 'cancelled';
   is_anonymous: boolean;
+  is_dev_room?: boolean;
   created_at: string;
   start_time?: string;
   end_time?: string;
@@ -183,6 +206,7 @@ export type StudentStackParamList = {
   StudentTabs: undefined;
   Settings: undefined;
   Profile: undefined;
+  ChangePassword: undefined;
   Notifications: undefined;
   MoodCheckIn: undefined;
   StressCauses: { moodLevel: number; stressLevel: number };
@@ -194,12 +218,14 @@ export type CounsellorStackParamList = {
   CounsellorTabs: undefined;
   Settings: undefined;
   Profile: undefined;
+  ChangePassword: undefined;
   Notifications: undefined;
   Consult: { appointmentId: string; title: string; isAnonymous?: boolean };
 };
 
 export type SharedStackParamList = {
   Profile: undefined;
+  ChangePassword: undefined;
   Settings: undefined;
   Notifications: undefined;
   Consult: { appointmentId: string; title: string; isAnonymous?: boolean };

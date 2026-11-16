@@ -1,25 +1,41 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Divider, List, Text } from 'react-native-paper';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Divider, Icon, List, Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Avatar } from '../../components/Avatar';
 import { Card } from '../../components/Card';
+import { InfoTip } from '../../components/InfoTip';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { SwitchRoleModal } from '../../components/SwitchRoleModal';
 import { getRoleLabel } from '../../constants/roleUsers';
+import { useNotifications } from '../../context/NotificationContext';
 import { useRole } from '../../context/RoleContext';
-import { AppRole, SharedStackParamList } from '../../types';
+import { SharedStackParamList } from '../../types';
 import { colors, palette, radius, spacing } from '../../utils/theme';
-import { Avatar } from "../../components/Avatar";
-
-interface SettingsScreenProps {
-  onSwitchRole: (role: AppRole) => void;
-}
 
 type NavigationProp = NativeStackNavigationProp<SharedStackParamList>;
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSwitchRole }) => {
-  const { role, profile, isCounsellor } = useRole();
+const AI_PRIVACY_INFO =
+  "Journal entries are analyzed by SafeSpace's own AI model, on our server, only when you switch it on for that entry. Peer posts are always analyzed. Only you can see the results, and you can correct any estimate. Nothing is sent to outside AI services.";
+
+interface InfoRowProps {
+  title: string;
+  value: string;
+  icon: string;
+}
+
+const InfoRow: React.FC<InfoRowProps> = ({ title, value, icon }) => (
+  <List.Item
+    title={title}
+    description={value}
+    left={(props) => <List.Icon {...props} icon={icon} color={colors.secondary} />}
+  />
+);
+
+export const SettingsScreen: React.FC = () => {
+  const { role, profile, isCounsellor, switchRole, clearRole } = useRole();
+  const { unreadCount } = useNotifications();
   const [modalVisible, setModalVisible] = useState(false);
   const navigation = useNavigation<NavigationProp>();
 
@@ -29,98 +45,139 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSwitchRole }) 
     ? `${profile.displayTitle || 'Dr.'} ${profile.user_name}`
     : profile.user_name;
 
-  const subDetail = isCounsellor
-    ? profile.specialization || 'Counseling Specialist'
-    : profile.faculty || 'Student';
+  // Shown under the name; the faculty / specialization has its own row below.
+  const roleTitle = isCounsellor ? 'Counsellor' : 'Student';
 
-  // Get Initials for fallback avatar
-  // const getInitials = (nameStr: string) => {
-  //   return nameStr
-  //     .split(' ')
-  //     .map((part) => part[0])
-  //     .join('')
-  //     .substring(0, 2)
-  //     .toUpperCase();
-  // };
+  const accountRows: InfoRowProps[] = [
+    ...(!isCounsellor && profile.anonymous_name
+      ? [{ title: 'Anonymous Name', value: profile.anonymous_name, icon: 'incognito' }]
+      : []),
+    ...(profile.gender ? [{ title: 'Gender', value: profile.gender, icon: 'gender-male-female' }] : []),
+    {
+      title: isCounsellor ? 'Specialization' : 'Faculty',
+      value: (isCounsellor ? profile.specialization : profile.faculty) || (isCounsellor ? 'Counselling Specialist' : 'Not set'),
+      icon: 'school-outline',
+    },
+  ];
+
+  const confirmSignOut = () => {
+    Alert.alert('Sign out', 'You will return to the role selection screen.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', style: 'destructive', onPress: clearRole },
+    ]);
+  };
 
   return (
     <ScreenContainer title="Settings" hideHeaderActions scroll={false}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-
-
+        {/* Profile */}
         <View style={styles.avatarContainer}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate('Profile')}>
-            <View style={styles.avatarFallback}>
-              <Avatar uri={profile.profile_picture} size={100} />
-            </View>
-            <View style={styles.editBadge}>
-              <List.Icon icon="account-edit-outline" color="colors.primary" />
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.previewTitle}>{displayName}</Text>
-          <Text style={styles.previewSub}>{subDetail}</Text>
+          <Avatar size={100} />
+          <View style={styles.nameRow}>
+            <Text style={styles.previewTitle} numberOfLines={1}>
+              {displayName}
+            </Text>
+            <Pressable
+              onPress={() => navigation.navigate('Profile')}
+              hitSlop={10}
+              style={({ pressed }) => [styles.editIcon, pressed && styles.editIconPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile"
+            >
+              <Icon source="pencil-outline" size={16} color={colors.primary} />
+            </Pressable>
+          </View>
+          <Text style={styles.previewSub}>{roleTitle}</Text>
         </View>
 
-        {/* 2. Account Details Section */}
+        {/* Account */}
         <Text style={styles.sectionHeader}>ACCOUNT INFORMATION</Text>
         <Card style={styles.sectionCard}>
-          <Divider />
-          {!isCounsellor && profile.anonymous_name ? (
-            <>
-              <List.Item
-                title="Anonymous Name"
-                description={profile.anonymous_name}
-                left={(props) => <List.Icon {...props} icon="incognito" color={colors.secondary} />}
-              />
-              <Divider />
-            </>
-          ) : null}
-          {profile.gender ? (
-            <>
-              <List.Item
-                title="Gender"
-                description={profile.gender}
-                left={(props) => <List.Icon {...props} icon="gender-male-female" color={colors.secondary} />}
-              />
-              <Divider />
-            </>
-          ) : null}
-          <List.Item
-            title={isCounsellor ? 'Specialization' : 'Faculty'}
-            description={subDetail}
-            left={(props) => <List.Icon {...props} icon="school-outline" color={colors.secondary} />}
-          />
+          {accountRows.map((row, i) => (
+            <React.Fragment key={row.title}>
+              {i > 0 && <Divider />}
+              <InfoRow {...row} />
+            </React.Fragment>
+          ))}
         </Card>
 
-        {/* 3. Dev / Switch Role Section */}
-        <Text style={styles.sectionHeader}>DEVELOPER OPTIONS</Text>
+        {/* Notifications and privacy */}
+        <Text style={styles.sectionHeader}>NOTIFICATIONS & PRIVACY</Text>
         <Card style={styles.sectionCard}>
           <List.Item
-            title="Current Role Environment"
-            description={getRoleLabel(role)}
-            left={(props) => <List.Icon {...props} icon="badge-account-outline" color={colors.secondary} />}
-            right={() => (
-              <View style={styles.roleTag}>
-                <TouchableOpacity onPress={() => setModalVisible(true)}>
-                  <Text style={styles.roleTagText}>Switch Dev Role</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            title="Notifications"
+            description={unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+            onPress={() => navigation.navigate('Notifications')}
+            left={(props) => <List.Icon {...props} icon="bell-outline" color={colors.secondary} />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" color={colors.textMuted} />}
           />
+          {!isCounsellor && (
+            <>
+              <Divider />
+              <List.Item
+                title="AI analysis & privacy"
+                description="How your writing is analyzed"
+                left={(props) => <List.Icon {...props} icon="shield-check-outline" color={colors.secondary} />}
+                right={() => (
+                  <View style={styles.infoRight}>
+                    <InfoTip title="AI analysis & privacy" text={AI_PRIVACY_INFO} />
+                  </View>
+                )}
+              />
+            </>
+          )}
         </Card>
 
-        {/* Role Modal Component */}
-        <SwitchRoleModal
-          visible={modalVisible}
-          currentRole={role}
-          onClose={() => setModalVisible(false)}
-          onSelect={(r) => {
-            setModalVisible(false);
-            onSwitchRole(r);
-          }}
-        />
+        {/* Security */}
+                  <Text style={styles.sectionHeader}>SECURITY</Text>
+                  <Card style={styles.securityCard}>
+                    <List.Item
+                      title="Change password"
+                      description="Use a strong password you don't use elsewhere"
+                      onPress={() => navigation.navigate('ChangePassword')}
+                      left={(props) => <List.Icon {...props} icon="lock-outline" color={colors.secondary} />}
+                      right={(props) => <List.Icon {...props} icon="chevron-right" color={colors.textMuted} />}
+                    />
+                  </Card>
+
+        {/* Development only: never shown in a production build */}
+        {__DEV__ && (
+          <>
+            <Text style={styles.sectionHeader}>DEVELOPER OPTIONS</Text>
+            <Card style={styles.sectionCard}>
+              <List.Item
+                title="Current Role Environment"
+                description={getRoleLabel(role)}
+                onPress={() => setModalVisible(true)}
+                left={(props) => <List.Icon {...props} icon="badge-account-outline" color={colors.secondary} />}
+                right={() => (
+                  <View style={styles.roleTag}>
+                    <Text style={styles.roleTagText}>Switch Dev Role</Text>
+                  </View>
+                )}
+              />
+            </Card>
+
+            <SwitchRoleModal
+              visible={modalVisible}
+              currentRole={role}
+              onClose={() => setModalVisible(false)}
+              onSelect={(r) => {
+                setModalVisible(false);
+                switchRole(r);
+              }}
+            />
+          </>
+        )}
+
+        <Pressable
+          onPress={confirmSignOut}
+          style={styles.signOut}
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
+        >
+          <Text style={styles.signOutText}>Sign out</Text>
+        </Pressable>
       </ScrollView>
     </ScreenContainer>
   );
@@ -128,69 +185,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSwitchRole }) 
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: spacing.lg,
-  },
-  profileHeaderCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: palette.border,
-    marginBottom: spacing.md,
-    elevation: 2,
-    shadowColor: palette.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-  },
-  profileRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-
+    paddingBottom: spacing.xl,
   },
   avatarContainer: {
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
-  avatarFallback: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarLabel: {
-    color: colors.primary,
-    fontWeight: '700',
-  },
-  profileInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
   previewTitle: {
+    flexShrink: 1,
     fontSize: 20,
     fontWeight: '700',
     color: colors.primary,
-    marginTop: spacing.sm,
   },
   previewSub: {
     fontSize: 14,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  profileName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  profileSub: {
-    fontSize: 13,
-    color: colors.secondary,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  profileEmail: {
-    fontSize: 12,
     color: colors.textMuted,
     marginTop: 2,
   },
@@ -208,6 +216,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: spacing.md,
   },
+  infoRight: {
+    justifyContent: 'center',
+    paddingRight: spacing.sm,
+  },
   roleTag: {
     backgroundColor: colors.secondaryLight,
     paddingHorizontal: spacing.sm,
@@ -220,17 +232,38 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.primary,
   },
-  editBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    borderRadius: 20,     // Circular shape (width / 2)
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    maxWidth: '100%',
+  },
+  editIcon: {
     width: 30,
     height: 30,
-    justifyContent: 'center',
+    borderRadius: 15,
     alignItems: 'center',
-    backgroundColor: palette.surfaceAlt,
-    borderColor: palette.white,
-    borderWidth: 2,
+    justifyContent: 'center',
+    backgroundColor: colors.primaryLight,
+  },
+  editIconPressed: { opacity: 0.7, transform: [{ scale: 0.92 }] },
+  signOut: {
+    marginTop: spacing.sm,
+    paddingVertical: 14,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    backgroundColor: palette.cancelledBg,
+  },
+  signOutText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: palette.cancelledText,
+  },
+  securityCard: {
+    padding: 0,
+    overflow: 'hidden',
+    marginBottom: spacing.xl,
   },
 });

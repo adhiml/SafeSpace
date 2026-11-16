@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {Alert, Modal, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View,} from "react-native";
 import { Text, Icon } from "react-native-paper";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -8,8 +8,10 @@ import * as consultationService from "../../services/consultationService";
 import { Appointment, StudentStackParamList, User } from "../../types";
 import { FloatingButton } from '../../components/FloatingButton';
 import { palette, spacing } from "../../utils/theme";
-import { WEEKDAYS, MONTHS } from "../../utils/date";
+import { WEEKDAYS, MONTHS, nextWorkdays } from "../../utils/date";
 import { Avatar } from "../../components/Avatar";
+import { nameWithTitle } from "../../utils/names";
+import { DevChatButton } from "../../components/DevChatButton";
 import { StatusFilter, STATUS_FILTERS, deriveStatus, statusStyles} from "../../constants/appointmentStatus";
 
 interface Counsellor {
@@ -17,7 +19,6 @@ interface Counsellor {
   name: string;
   initials?: string;
   title: string;
-  profile_picture?: string;
 }
 
 const SLOT_HOURS = [9, 10, 11, 12, 13, 14, 15, 16];
@@ -38,15 +39,13 @@ const isSameDay = (a: Date, b: Date) =>
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate();
 
-/** The five selectable days, starting today. */
-const buildDateStrip = () => {
-  const today = new Date();
-  return Array.from({ length: 5 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  });
+/** The next five selectable weekdays (Mon–Fri only), starting today. */
+const buildDateStrip = () => nextWorkdays(5);
+
+const slotTime = (date: Date, hour: number) => {
+  const d = new Date(date);
+  d.setHours(hour, 0, 0, 0);
+  return d;
 };
 
 /* ------------------------------------------------------------------ */
@@ -72,6 +71,43 @@ export const ConsultationScreen: React.FC = () => {
   const [bookingIsAnonymous, setBookingIsAnonymous] = useState(true);
   const [loading, setLoading] = useState(false);
   const [notes, setNotes] = useState("");
+  // Start times (ms) the chosen counsellor already has a confirmed session
+  const [bookedSlots, setBookedSlots] = useState<Set<number>>(new Set());
+
+  const loadBookedSlots = useCallback(async () => {
+    if (!selectedCounsellorId) return;
+    try {
+      const end = new Date(dateStrip[dateStrip.length - 1]);
+      end.setDate(end.getDate() + 1);
+      const booked = await consultationService.getBookedSlots(selectedCounsellorId, dateStrip[0], end);
+      setBookedSlots(new Set(booked.map((iso) => new Date(iso).getTime())));
+    } catch {
+      setBookedSlots(new Set()); // server still rejects a taken slot when submitting
+    }
+  }, [selectedCounsellorId, dateStrip]);
+
+  useEffect(() => {
+    if (sheetOpen) loadBookedSlots();
+  }, [sheetOpen, loadBookedSlots]);
+
+  const slotState = useCallback(
+    (hour: number): "open" | "booked" | "passed" => {
+      const time = slotTime(bookingDate, hour).getTime();
+      if (time <= Date.now()) return "passed";
+      return bookedSlots.has(time) ? "booked" : "open";
+    },
+    [bookingDate, bookedSlots],
+  );
+
+  // Keep the selection on a slot that can actually be booked.
+  useEffect(() => {
+    if (slotState(bookingHour) !== "open") {
+      const firstOpen = SLOT_HOURS.find((h) => slotState(h) === "open");
+      if (firstOpen !== undefined) setBookingHour(firstOpen);
+    }
+  }, [slotState, bookingHour]);
+
+  const noSlotsLeft = SLOT_HOURS.every((h) => slotState(h) !== "open");
 
   /** Helper to map counsellor reference (string ID or populated User object) */
   const counsellorFor = useCallback(
@@ -87,10 +123,9 @@ export const ConsultationScreen: React.FC = () => {
           : "";
         return {
           id: ref._id,
-          name: ref.user_name,
+          name: nameWithTitle(ref),
           initials: initials,
           title: specialization || "Student Wellness Centre",
-          profile_picture: ref.profile_picture,
         };
       }
       return (
@@ -179,6 +214,7 @@ export const ConsultationScreen: React.FC = () => {
       Alert.alert("Request sent", "Your counsellor will confirm the slot.");
     } catch (e) {
       Alert.alert("Error", e instanceof Error ? e.message : "Booking failed");
+      loadBookedSlots(); // the slot may have just been taken by someone else
     } finally {
       setLoading(false);
     }
@@ -229,6 +265,11 @@ export const ConsultationScreen: React.FC = () => {
         onPress={() => filterOpen && setFilterOpen(false)}
       >
         <Text style={styles.subtitle}>Reflect on your emotional trends</Text>
+        <DevChatButton
+          onOpen={(appointmentId) =>
+            navigation.navigate("Consult", { appointmentId, title: "Dev chatroom", isAnonymous: false })
+          }
+        />
 
         {/* Date strip */}
         <View style={styles.dateStrip}>
@@ -360,7 +401,7 @@ export const ConsultationScreen: React.FC = () => {
 
                     <View style={styles.counsellorRow}>
                       <View style={styles.avatar}>
-                        <Avatar uri={counsellor.profile_picture} size={30} />
+                        <Avatar size={30} />
                       </View>
                       <View style={styles.flexShrink}>
                         <Text style={styles.counsellorName} numberOfLines={1}>
@@ -393,7 +434,7 @@ export const ConsultationScreen: React.FC = () => {
                           {slotLabel(start.getHours())}
                         </Text>
                       </View>
-                      <View style={{ flexDirection: "row", columnGap: 5, alignItems: "center" }}>
+                      <View   >
                         <TouchableOpacity
                           style={styles.deleteButton}
                           activeOpacity={0.8}
@@ -522,27 +563,48 @@ export const ConsultationScreen: React.FC = () => {
             </ScrollView>
 
             <Text style={styles.fieldLabel}>
-              Select a 1-hour slot (9:00 AM – 5:00 PM)
+              Select a 1-hour slot (Mon–Fri, 9:00 AM – 5:00 PM)
             </Text>
             <View style={styles.slotGrid}>
               {SLOT_HOURS.map((hour) => {
-                const active = hour === bookingHour;
+                const state = slotState(hour);
+                const unavailable = state !== "open";
+                const active = !unavailable && hour === bookingHour;
                 return (
                   <TouchableOpacity
                     key={hour}
                     activeOpacity={0.85}
+                    disabled={unavailable}
                     onPress={() => setBookingHour(hour)}
-                    style={[styles.slot, active && styles.slotActive]}
+                    style={[
+                      styles.slot,
+                      active && styles.slotActive,
+                      unavailable && styles.slotDisabled,
+                    ]}
                   >
                     <Text
-                      style={[styles.slotText, active && styles.slotTextActive]}
+                      style={[
+                        styles.slotText,
+                        active && styles.slotTextActive,
+                        unavailable && styles.slotTextDisabled,
+                      ]}
                     >
                       {slotLabel(hour)}
                     </Text>
+                    {unavailable && (
+                      <Text style={styles.slotNote}>
+                        {state === "booked" ? "Booked" : "Passed"}
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 );
               })}
             </View>
+            {noSlotsLeft && (
+              <Text style={styles.noSlots}>
+                No slots left on this day. Please pick another date.
+              </Text>
+            )}
 
             <Text style={styles.fieldLabel}>Booking identity</Text>
             <View style={styles.segment}>
@@ -607,9 +669,9 @@ export const ConsultationScreen: React.FC = () => {
             </View>
 
             <TouchableOpacity
-              style={[styles.submit, loading && styles.submitDisabled]}
+              style={[styles.submit, (loading || noSlotsLeft) && styles.submitDisabled]}
               activeOpacity={0.9}
-              disabled={loading}
+              disabled={loading || noSlotsLeft}
               onPress={book}
             >
               <Text style={styles.submitText}>
@@ -659,7 +721,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 8,
-    marginVertical: spacing.lg,
+    marginVertical: spacing.md,
   },
   dateCell: {
     flex: 1,
@@ -949,6 +1011,10 @@ const styles = StyleSheet.create({
   },
   slotText: { fontSize: 10, fontWeight: "600", color: palette.textSoft },
   slotTextActive: { color: palette.white },
+  slotDisabled: { opacity: 0.5, backgroundColor: palette.borderSoft },
+  slotTextDisabled: { color: palette.textFaint, textDecorationLine: "line-through" },
+  slotNote: { fontSize: 9, fontWeight: "700", color: palette.textFaint, marginTop: 1 },
+  noSlots: { fontSize: 11, color: palette.warnText, marginTop: spacing.sm },
 
   segment: {
     flexDirection: "row",

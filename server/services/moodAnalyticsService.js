@@ -11,17 +11,20 @@ moodAnalyticsService.js
 */
 
 ///////////////////////////////////// Daily Stats////////////////////////////////
+// Extracts the local calendar YYYY-MM-DD regardless of server timezone shifts
+const toDateKey = (value) => {
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const buildDailyStats = (entries) => {
   const map = {};
 
   entries.forEach((e) => {
-    const date = new Date(e.created_at);
-    
-    // Extracts the local calendar YYYY-MM-DD regardless of server timezone shifts
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const key = `${year}-${month}-${day}`;
+    const key = toDateKey(e.created_at);
 
     if (!map[key]) {
       map[key] = {
@@ -172,6 +175,7 @@ const percentChange = (current, previous) => {
 // };
 
 module.exports = {
+  toDateKey,
   buildDailyStats,
   buildWeeklyStats,
   buildMonthlyStats,

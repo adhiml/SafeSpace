@@ -1,5 +1,10 @@
 import api from '../api/client';
-import { CounsellorAnalytics, MoodAnalytics, MoodEntry } from '../types';
+import { CounsellorAnalytics, DailyStress, MoodAnalytics, MoodEntry } from '../types';
+
+export const getDailyStress = async () => {
+  const { data } = await api.get<DailyStress>('/moods/daily-stress');
+  return data;
+};
 
 export const createMood = async (payload: {
   mood_level: number;

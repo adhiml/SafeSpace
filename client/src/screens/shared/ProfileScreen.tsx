@@ -1,204 +1,184 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput, List } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Avatar } from '../../components/Avatar';
 import { Card } from '../../components/Card';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { useRole } from '../../context/RoleContext';
+import { RoleProfile, SharedStackParamList } from '../../types';
 import { colors, palette, radius, spacing } from '../../utils/theme';
-import * as ImagePicker from 'expo-image-picker';
+
+interface FormValues {
+  user_name: string;
+  displayTitle: string;
+  specialization: string;
+  anonymous_name: string;
+  gender: string;
+  faculty: string;
+}
+
+interface FieldDef {
+  key: keyof FormValues;
+  label: string;
+  max: number; // matches the server's limits
+  hint?: string;
+  autoCapitalize?: 'none' | 'words';
+}
+
+const STUDENT_FIELDS: FieldDef[] = [
+  { key: 'user_name', label: 'Display Name', max: 60, autoCapitalize: 'words' },
+  {
+    key: 'anonymous_name',
+    label: 'Anonymous Name',
+    max: 30,
+    autoCapitalize: 'none',
+    hint: 'Shown instead of your name on peer posts and anonymous consultations. It must be unique.',
+  },
+  { key: 'gender', label: 'Gender', max: 30, autoCapitalize: 'words' },
+  { key: 'faculty', label: 'Faculty', max: 80, autoCapitalize: 'words' },
+];
+
+const COUNSELLOR_FIELDS: FieldDef[] = [
+  { key: 'user_name', label: 'Display Name', max: 60, autoCapitalize: 'words' },
+  { key: 'displayTitle', label: 'Title', max: 20, autoCapitalize: 'words', hint: 'Shown before your name, e.g. "Dr."' },
+  { key: 'specialization', label: 'Specialization', max: 100, autoCapitalize: 'words' },
+];
+
+const fromProfile = (p: RoleProfile | null): FormValues => ({
+  user_name: p?.user_name ?? '',
+  displayTitle: p?.displayTitle ?? 'Dr.',
+  specialization: p?.specialization ?? '',
+  anonymous_name: p?.anonymous_name ?? '',
+  gender: p?.gender ?? '',
+  faculty: p?.faculty ?? '',
+});
 
 export const ProfileScreen: React.FC = () => {
-  const { role, profile, isCounsellor, updateProfile } = useRole();
+  const { role, profile, isCounsellor, saveProfile } = useRole();
+  const navigation = useNavigation<NativeStackNavigationProp<SharedStackParamList>>();
+
+  // Hooks all run before the early return below, so their order never changes.
+  const saved = fromProfile(profile);
+  const savedKey = JSON.stringify(saved);
+  const [form, setForm] = useState<FormValues>(saved);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const touched = useRef(false);
+
+  // The saved profile can arrive from the server after this screen opens; show it unless
+  // the user has already started typing.
+  useEffect(() => {
+    if (!touched.current) setForm(fromProfile(profile));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedKey]);
 
   if (!profile || !role) return null;
 
-  // Local state to prevent premature context updates while typing
-  const [userName, setUserName] = useState(profile.user_name || '');
-  const [displayTitle, setDisplayTitle] = useState(profile.displayTitle || 'Dr.');
-  const [specialization, setSpecialization] = useState(profile.specialization || '');
-  const [anonymousName, setAnonymousName] = useState(profile.anonymous_name || '');
-  const [gender, setGender] = useState(profile.gender || '');
-  const [email, setEmail] = useState(profile.email || '');
-  const [profilePicture, setProfilePicture] = useState(profile.profile_picture || '');
-  // const [password, setPassword] = useState(profile.password || '');
-  const [faculty, setFaculty] = useState(profile.faculty || '');
+  const fields = isCounsellor ? COUNSELLOR_FIELDS : STUDENT_FIELDS;
+  const dirty = JSON.stringify(form) !== savedKey;
 
-  const liveDisplayName = isCounsellor
-    ? `${displayTitle || 'Dr.'} ${userName}`
-    : userName;
-
-  // const specialization = profile.specialization || (isCounsellor ? 'Counseling Specialist' : '');
-  // const faculty = profile.faculty || (isCounsellor ? '' : 'Student');
-
-  const handlePickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (!permissionResult.granted) {
-      alert('Permission to access media library is required!');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    
-    if(!result.canceled && result.assets?.length) {
-      const selectedImageUri = result.assets[0].uri;
-      updateProfile({ profile_picture: selectedImageUri });
-    }
+  const setField = (key: keyof FormValues, value: string) => {
+    touched.current = true;
+    setError(null);
+    setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = () => {
-    if (isCounsellor) {
-      updateProfile({
-        user_name: userName,
-        displayTitle,
-        specialization,
-        profile_picture: profile.profile_picture,
-        gender: profile.gender,
-        email: profile.email,
-        anonymous_name: profile.anonymous_name,
-      });
-    } else {
-      updateProfile({
-        user_name: userName,
-        profile_picture: profile.profile_picture,
-        gender: profile.gender,
-        email: profile.email,
-        anonymous_name: anonymousName,
-        faculty,
-      });
+  const liveDisplayName = isCounsellor
+    ? `${form.displayTitle.trim() || 'Dr.'} ${form.user_name}`
+    : form.user_name;
+  const liveSubtitle = isCounsellor
+    ? form.specialization || 'Counselling Specialist'
+    : form.faculty || 'Student';
+
+  const handleSave = async () => {
+    const name = form.user_name.trim();
+    const alias = form.anonymous_name.trim();
+
+    if (!name) return setError('Your name cannot be empty.');
+    if (!isCounsellor) {
+      if (!alias) return setError('Your anonymous name cannot be empty.');
+      if (alias.toLowerCase() === name.toLowerCase()) {
+        return setError('Your anonymous name must be different from your real name.');
+      }
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+      await saveProfile(
+        isCounsellor
+          ? { user_name: name, displayTitle: form.displayTitle.trim(), specialization: form.specialization.trim() }
+          : { user_name: name, anonymous_name: alias, gender: form.gender.trim(), faculty: form.faculty.trim() }
+      );
+      touched.current = false;
+      navigation.goBack();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save your changes.');
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <ScreenContainer title="edit." scroll={false}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {/* Preview. Everyone shares the same default picture. */}
+          <View style={styles.avatarContainer}>
+            <Avatar size={100} />
+            <Text style={styles.previewTitle}>{liveDisplayName}</Text>
+            <Text style={styles.previewSub}>{liveSubtitle}</Text>
+          </View>
 
-        {/* Avatar Header Preview */}
-        <View style={styles.avatarContainer}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => {
-              handlePickImage();
-              console.log('Avatar pressed');
-            }}>
-            <View style={styles.avatarFallback}>
-              <Avatar uri={profile.profile_picture} size={100} />
-            </View>
-            <View style={styles.editBadge}>
-              <List.Icon icon="account-edit-outline" color="colors.primary" />
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.previewTitle}>{liveDisplayName}</Text>
-          <Text style={styles.previewSub}>
-            {isCounsellor ? specialization || 'Counseling Specialist' : faculty || 'Student'}
-          </Text>
-        </View>
+          {/* Editable fields */}
+          <Card style={styles.card}>
+            {fields.map((f, i) => (
+              <View key={f.key}>
+                <Text style={[styles.label, i === 0 && styles.firstLabel]}>{f.label}</Text>
+                <TextInput
+                  mode="outlined"
+                  value={form[f.key]}
+                  onChangeText={(v) => setField(f.key, v)}
+                  maxLength={f.max}
+                  autoCapitalize={f.autoCapitalize}
+                  autoCorrect={false}
+                  style={styles.input}
+                  outlineColor={colors.border}
+                  activeOutlineColor={colors.primary}
+                />
+                {f.hint ? <Text style={styles.hint}>{f.hint}</Text> : null}
+              </View>
+            ))}
 
-        {/* Profile Inputs Card */}
-        <Card style={styles.card}>
-          <Text style={styles.label}>Display Name</Text>
-          <TextInput
-            mode="outlined"
-            value={userName}
-            onChangeText={setUserName}
-            style={styles.input}
-            outlineColor={colors.border}
-            activeOutlineColor={colors.primary}
+            <Text style={styles.readOnlyLabel}>Email (read-only)</Text>
+            <TextInput
+              mode="outlined"
+              value={profile.email || ''}
+              disabled
+              style={[styles.input, styles.disabledInput]}
+            />
+          </Card>
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <PrimaryButton
+            label={saving ? 'Saving…' : 'Save Changes'}
+            onPress={handleSave}
+            loading={saving}
+            disabled={!dirty || saving}
           />
 
-          {isCounsellor ? (
-            <>
-              <Text style={styles.label}>Title</Text>
-              <TextInput
-                mode="outlined"
-                value={displayTitle}
-                onChangeText={setDisplayTitle}
-                style={styles.input}
-                outlineColor={colors.border}
-                activeOutlineColor={colors.primary}
-              />
-
-              <Text style={styles.label}>Specialization</Text>
-              <TextInput
-                mode="outlined"
-                value={specialization}
-                onChangeText={setSpecialization}
-                style={styles.input}
-                outlineColor={colors.border}
-                activeOutlineColor={colors.primary}
-              />
-            </>
-          ) : (
-            <>
-              <Text style={styles.label}>Anonymous Name</Text>
-              <TextInput
-                mode="outlined"
-                value={anonymousName}
-                onChangeText={setAnonymousName}
-                style={styles.input}
-                outlineColor={colors.border}
-                activeOutlineColor={colors.primary}
-              />
-
-              <Text style={styles.label}>Gender</Text>
-              <TextInput
-                mode="outlined"
-                value={gender}
-                onChangeText={setGender}
-                style={styles.input}
-                outlineColor={colors.border}
-                activeOutlineColor={colors.primary}
-              />
-
-              <Text style={styles.label}>Faculty</Text>
-              <TextInput
-                mode="outlined"
-                value={faculty}
-                onChangeText={setFaculty}
-                style={styles.input}
-                outlineColor={colors.border}
-                activeOutlineColor={colors.primary}
-              />
-            </>
-          )}
-
-          <Text style={styles.readOnlyLabel}>Email (Read-only)</Text>
-          <TextInput
-            mode="outlined"
-            value={profile.email || ''}
-            disabled
-            style={[styles.input, styles.disabledInput]}
-          />
-        </Card>
-
-        <PrimaryButton
-          label="Save Changes"
-          onPress={handleSave}
-        />
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: spacing.md,
-    paddingBottom: spacing.xl,
-  },
-  avatarFallback: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  flex: { flex: 1 },
   avatarContainer: {
     alignItems: 'center',
     marginBottom: spacing.lg,
@@ -225,6 +205,8 @@ const styles = StyleSheet.create({
     color: colors.secondary,
     marginTop: spacing.sm,
   },
+  firstLabel: { marginTop: 0 },
+  hint: { fontSize: 11, color: colors.textMuted, marginTop: 4, lineHeight: 15 },
   readOnlyLabel: {
     fontSize: 12,
     fontWeight: '600',
@@ -236,19 +218,22 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   disabledInput: {
-    backgroundColor: colors.background,
-  },
-  editBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    borderRadius: 20,     // Circular shape (width / 2)
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: palette.surfaceAlt,
-    borderColor: palette.white,
-    borderWidth: 1,
   },
-})
+  error: {
+    color: palette.cancelledText,
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  sectionHeader: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 0.8,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+    marginLeft: spacing.xs,
+  },
+});

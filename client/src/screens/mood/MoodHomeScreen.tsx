@@ -11,7 +11,8 @@ import { PrimaryButton } from '../../components/PrimaryButton';
 import { useMood } from '../../context/MoodContext';
 import { useRole } from '../../context/RoleContext';
 import * as moodService from '../../services/moodService';
-import { MoodAnalytics, MoodEntry, StudentStackParamList } from '../../types';
+import { DailyStress, MoodAnalytics, MoodEntry, StudentStackParamList } from '../../types';
+import { DailyStressCard } from '../../components/stress/DailyStressCard';
 import { MOOD_COLORS, MOOD_LABELS, STRESS_CAUSES } from '../../utils/constants'; // Loaded from your constants
 import { getRecommendations } from '../../utils/recommendations';
 import { colors, radius, spacing } from '../../utils/theme';
@@ -30,6 +31,7 @@ export const MoodHomeScreen: React.FC = () => {
   const [history, setHistory] = useState<MoodEntry[]>([]);
   const [analytics, setAnalytics] = useState<MoodAnalytics | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [dailyStress, setDailyStress] = useState<DailyStress | null>(null);
 
   // States to handle our folding drawer panel
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -40,6 +42,8 @@ export const MoodHomeScreen: React.FC = () => {
     useCallback(() => {
       refreshMoods().catch(() => undefined);
       moodService.getMoods().then(setHistory).catch(() => setHistory([]));
+      // Re-read on every focus so edits made on the Journal/Peer screens show up here.
+      moodService.getDailyStress().then(setDailyStress).catch(() => undefined);
 
       moodService.getMoodAnalytics()
 
@@ -85,19 +89,22 @@ export const MoodHomeScreen: React.FC = () => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setIsPanelOpen(false);
 
+      // Same rule as the check-in flow: stress follows the mood picked. "Skip" only skips the causes.
       const entry = await moodService.createMood({
         mood_level: pendingMoodLevel,
-        stress_level: shouldSkip ? 1 : stressLevel,
+        stress_level: Math.max(1, 6 - pendingMoodLevel),
         stress_causes: shouldSkip ? [] : selectedCauses,
       });
 
       setLatestMood(entry);
-      const [moods, updatedAnalytics] = await Promise.all([
+      const [moods, updatedAnalytics, daily] = await Promise.all([
         moodService.getMoods(),
-        moodService.getMoodAnalytics()
+        moodService.getMoodAnalytics(),
+        moodService.getDailyStress(),
       ]);
       setHistory(moods);
       setAnalytics(updatedAnalytics);
+      setDailyStress(daily);
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Could not save mood');
     } finally {
@@ -132,6 +139,13 @@ export const MoodHomeScreen: React.FC = () => {
             />
           </View>
         </Card>
+
+        <DailyStressCard
+          data={dailyStress}
+          onSupportPress={() =>
+            (navigation as unknown as { navigate: (screen: string) => void }).navigate('Consultation')
+          }
+        />
 
         {/* Foldable Stress Causes Section --- */}
         {isPanelOpen && (
@@ -179,22 +193,6 @@ export const MoodHomeScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>Recommendations for you</Text>
         <RecommendationCarousel items={getRecommendations(stressLevel)} />
 
-        <Text style={[styles.sectionTitle, styles.historyTitle]}>Mood history</Text>
-        {history.length === 0 ? (
-          <Text style={styles.empty}>No mood entries yet.</Text>
-        ) : (
-          history.slice(0, 7).map((entry) => (
-            <View key={entry._id} style={styles.historyRow}>
-              <View style={[styles.moodDot, { backgroundColor: MOOD_COLORS[entry.mood_level] }]} />
-              <View style={styles.historyBody}>
-                <Text style={styles.historyMood}>{MOOD_LABELS[entry.mood_level]}</Text>
-                <Text style={styles.historyMeta}>
-                  Stress {entry.stress_level}/5 · {new Date(entry.created_at).toLocaleDateString()}
-                </Text>
-              </View>
-            </View>
-          ))
-        )}
       </ScrollView>
     </ScreenContainer>
   );
@@ -202,20 +200,11 @@ export const MoodHomeScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   card: { marginBottom: spacing.md },
-  welcomeRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.md },
-  welcome: { fontSize: 22, color: colors.text, fontWeight: '500' },
-  nameLink: { fontSize: 22, color: colors.primary, fontWeight: '700' },
+  welcomeRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.sm},
+  welcome: { fontSize: 20, color: colors.text, fontWeight: '500' },
+  nameLink: { fontSize: 20, color: colors.primary, fontWeight: '700' },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: spacing.xs },
   currentMood: { fontSize: 14, color: colors.textMuted, marginBottom: spacing.xs },
-  historyTitle: { marginTop: spacing.lg },
-  historyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    padding: spacing.md,
-    borderRadius: 12,
-    marginBottom: spacing.sm,
-  },
   moodDot: { width: 12, height: 12, borderRadius: 6, marginRight: spacing.md },
   historyBody: { flex: 1 },
   historyMood: { fontWeight: '700', color: colors.text },

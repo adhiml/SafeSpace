@@ -4,7 +4,7 @@ import { resolveApiBaseUrl, apiConnectionHint } from '../utils/apiConfig';
 
 const api = axios.create({
   baseURL: resolveApiBaseUrl(),
-  timeout: 5000,
+  timeout: 10000, // AI analysis runs in the background, so no request waits on the model
   headers: { 'Content-Type': 'application/json' },
 });
 

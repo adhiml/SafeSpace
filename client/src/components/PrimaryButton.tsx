@@ -7,6 +7,7 @@ interface PrimaryButtonProps {
   label: string;
   onPress: () => void;
   loading?: boolean;
+  disabled?: boolean;
   mode?: 'contained' | 'outlined' | 'text';
   color?: string;
 }
@@ -15,6 +16,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   label,
   onPress,
   loading,
+  disabled,
   mode = 'contained',
   color,
 }) => (
@@ -22,6 +24,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     mode={mode}
     onPress={onPress}
     loading={loading}
+    disabled={disabled}
     style={styles.btn}
     labelStyle={styles.label}
     buttonColor={mode === 'contained' ? color || colors.primary : undefined}

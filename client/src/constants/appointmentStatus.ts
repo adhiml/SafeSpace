@@ -7,6 +7,7 @@ export type StatusFilter = 'all' | UiStatus;
 const SESSION_DURATION_MS = 60 * 60 * 1000; // appointments are booked in fixed 1-hour slots
 
 export const deriveStatus = (appointment: Appointment): UiStatus => {
+  if (appointment.is_dev_room) return 'active'; // always-open developer chatroom
   if (appointment.status === 'cancelled') return 'cancelled';
 
   if (appointment.status === 'pending') return 'pending';

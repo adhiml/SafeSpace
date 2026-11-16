@@ -1,5 +1,10 @@
 import api from '../api/client';
-import { Journal } from '../types';
+import { Journal, StressReviewResult } from '../types';
+
+export const reviewJournalStress = async (id: string, action: 'affirm' | 'correct', score?: number) => {
+  const { data } = await api.patch<StressReviewResult<Journal>>(`/journals/${id}/stress-review`, { action, score });
+  return data;
+};
 
 export const createJournal = async (payload: {
   title: string;

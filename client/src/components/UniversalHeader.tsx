@@ -3,7 +3,8 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { colors, radius, spacing } from '../utils/theme';
+import { useNotifications } from '../context/NotificationContext';
+import { colors, palette, spacing } from '../utils/theme';
 
 interface UniversalHeaderProps {
   title: string;
@@ -17,6 +18,7 @@ export const UniversalHeader: React.FC<UniversalHeaderProps> = ({
   showActions = true, // Default to true if not provided
 }) => {
   const navigation = useNavigation();
+  const { unreadCount } = useNotifications();
   const displayTitle = isHome ? 'tenang.' : title;
 
   return (
@@ -37,8 +39,17 @@ export const UniversalHeader: React.FC<UniversalHeaderProps> = ({
       <View style={[styles.side, styles.actions]}>
         {showActions && (
           <>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Notifications' as never)}>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={() => navigation.navigate('Notifications' as never)}
+              accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+            >
               <Ionicons name="notifications-outline" size={22} color={colors.primary} />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Settings' as never)}>
               <Ionicons name="settings-outline" size={22} color={colors.primary} />
@@ -69,5 +80,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconBtn: { padding: spacing.xs, marginLeft: spacing.xs },
+  badge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 3,
+    backgroundColor: palette.cancelledDot,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: { color: palette.white, fontSize: 9, fontWeight: '800' },
 });
 

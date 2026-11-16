@@ -6,6 +6,7 @@ import { Card } from '../../components/Card';
 import { FloatingButton } from '../../components/FloatingButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { CollapsiblePreview } from '../../components/CollapsiblePreview';
+import { StressReview, hasStressTag } from '../../components/stress/StressReview';
 import * as journalService from '../../services/journalService';
 import { Journal, StudentStackParamList } from '../../types';
 import { colors, spacing, radius, palette} from '../../utils/theme';
@@ -102,6 +103,20 @@ export const JournalScreen: React.FC = () => {
                 </>
               )}
             </CollapsiblePreview>
+
+            {item.is_sentiment_enabled && hasStressTag(item.stress_analysis) && (
+              <View style={styles.stressRow}>
+                <StressReview
+                  analysis={item.stress_analysis}
+                  onRefresh={load}
+                  info="Only you can see this result."
+                  onReview={async (action, score) => {
+                    const res = await journalService.reviewJournalStress(item._id, action, score);
+                    setJournals((prev) => prev.map((j) => (j._id === item._id ? res.item : j)));
+                  }}
+                />
+              </View>
+            )}
           </Card>
         )}
         ListEmptyComponent={
@@ -149,6 +164,7 @@ const styles = StyleSheet.create({
   expanded: {
     color: colors.text,
   },
+  stressRow: { marginTop: spacing.sm },
   tagsRow: {
     flexDirection: 'row',
     flexWrap: "wrap",

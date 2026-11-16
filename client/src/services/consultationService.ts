@@ -6,7 +6,6 @@ export interface Counsellor {
   name: string;
   title: string;
   faculty?: string;
-  profile_picture?: string;
 }
 
 export const getCounsellors = async (): Promise<Counsellor[]> => {
@@ -57,5 +56,29 @@ export const getMessages = async (appointmentId: string) => {
 
 export const getNotifications = async () => {
   const { data } = await api.get<Notification[]>('/notifications');
+  return data;
+};
+
+export const markNotificationRead = async (id: string) => {
+  const { data } = await api.patch<Notification>(`/notifications/${id}/read`);
+  return data;
+};
+
+export const markAllNotificationsRead = async () => {
+  const { data } = await api.patch<{ updated: number }>('/notifications/read-all');
+  return data;
+};
+
+/** Development only: the one always-open chatroom (Jamie Chen <-> Morgan Lee). */
+export const getDevRoom = async () => {
+  const { data } = await api.get<Appointment>('/appointments/dev-room');
+  return data;
+};
+
+/** Times (ISO strings) this counsellor already has a confirmed session. Contains no student details. */
+export const getBookedSlots = async (counsellorId: string, from: Date, to: Date) => {
+  const { data } = await api.get<string[]>(`/counsellors/${counsellorId}/booked-slots`, {
+    params: { from: from.toISOString(), to: to.toISOString() },
+  });
   return data;
 };

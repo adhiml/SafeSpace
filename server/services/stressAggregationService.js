@@ -1,6 +1,7 @@
 const MoodEntry = require('../models/MoodEntry');
 const Journal = require('../models/Journal');
 const PeerPost = require('../models/PeerPost');
+const { toDateKey } = require('./moodAnalyticsService');
 
 // Weight of an unreviewed AI score, by model confidence. Reviewed scores always weigh 1.
 const CONFIDENCE_WEIGHT = { low: 0.4, medium: 0.7, high: 0.9 };
@@ -31,6 +32,7 @@ const effectiveText = (item) => {
  * (callers must already have excluded journals without consent).
  */
 const aggregateDailyStress = (moodEntries = [], textItems = []) => {
+  // Every check-in of the day counts: they are averaged into one daily value.
   const explicit = moodEntries.length ? mean(moodEntries.map((m) => m.stress_level)) : null;
 
   const signals = textItems.map(effectiveText).filter(Boolean);
@@ -84,6 +86,32 @@ const getDailyStress = async (userId, date = new Date()) => {
   return aggregateDailyStress(moods, [...journals, ...posts]);
 };
 
+/**
+ * Replaces each day's check-in-only `stress` with the blended daily score, so charts and the
+ * "Today's stress" card always agree. Days without writing are unchanged.
+ */
+const applyTextStress = async (userId, moodEntries, daily) => {
+  if (!moodEntries.length) return daily;
+  const since = new Date(Math.min(...moodEntries.map((m) => new Date(m.created_at))));
+  since.setHours(0, 0, 0, 0);
+
+  const [journals, posts] = await Promise.all([
+    Journal.find({ user_id: userId, created_at: { $gte: since }, is_sentiment_enabled: true }),
+    PeerPost.find({ user_id: userId, created_at: { $gte: since } }),
+  ]);
+
+  const moodsByDay = {};
+  const textByDay = {};
+  moodEntries.forEach((m) => (moodsByDay[toDateKey(m.created_at)] ||= []).push(m));
+  [...journals, ...posts].forEach((t) => (textByDay[toDateKey(t.created_at)] ||= []).push(t));
+
+  return daily.map((d) => {
+    const agg = aggregateDailyStress(moodsByDay[d.date] || [], textByDay[d.date] || []);
+    // d.mood is already the average of the day's check-ins; stress adds the day's writing.
+    return agg.final === null ? d : { ...d, stress: agg.final, checkinStress: d.stress };
+  });
+};
+
 /** Applies a student's affirm/correct decision to a doc's stress_analysis. Returns false if invalid. */
 const applyReview = (doc, action, score) => {
   const a = doc.stress_analysis;
@@ -101,4 +129,4 @@ const applyReview = (doc, action, score) => {
   return true;
 };
 
-module.exports = { aggregateDailyStress, getDailyStress, applyReview };
+module.exports = { aggregateDailyStress, getDailyStress, applyReview, applyTextStress };

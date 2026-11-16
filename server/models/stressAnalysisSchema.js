@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 // the effective score is user_score when review === 'corrected', else ai_score.
 const stressAnalysisSchema = new mongoose.Schema(
   {
-    status: { type: String, enum: ['success', 'unavailable'], default: 'unavailable' },
+    status: { type: String, enum: ['pending', 'success', 'unavailable'], default: 'unavailable' },
     sentiment: { type: String, enum: ['positive', 'neutral', 'negative'] },
     ai_score: { type: Number, min: 1, max: 5 },
     confidence: { type: String, enum: ['low', 'medium', 'high'] },

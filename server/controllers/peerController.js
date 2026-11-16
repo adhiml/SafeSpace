@@ -1,6 +1,6 @@
 const PeerPost = require('../models/PeerPost');
 // const PeerComment = require('../models/PeerComment');
-const { analyzeText, legacyScore } = require('../services/sentimentService');
+const { PENDING, runAnalysisJob } = require('../services/analysisJobs');
 const { getDailyStress, applyReview } = require('../services/stressAggregationService');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -19,14 +19,13 @@ const createPost = asyncHandler(async (req, res) => {
     throw new Error('content is required');
   }
   // Peer posts are always analysed (no opt-out).
-  const analysis = await analyzeText(content);
   const post = await PeerPost.create({
     user_id: req.demoUserId,
     content,
     tags: tags || [],
-    sentiment_score: legacyScore(analysis),
-    stress_analysis: analysis,
+    stress_analysis: PENDING,
   });
+  runAnalysisJob(PeerPost, post._id, content);
   const populated = await PeerPost.findById(post._id).populate('user_id', 'anonymous_name user_name');
   res.status(201).json(forViewer(populated, req.demoUserId));
 });

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text, TextInput } from 'react-native-paper';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -8,6 +8,7 @@ import { ScreenContainer } from '../../components/ScreenContainer';
 import { useRole } from '../../context/RoleContext';
 import * as consultationService from '../../services/consultationService';
 import { Appointment, ChatMessage, CounsellorStackParamList, StudentStackParamList, User } from '../../types';
+import { nameWithTitle } from '../../utils/names';
 import { colors, palette, radius, spacing } from '../../utils/theme';
 
 type Props = NativeStackScreenProps<
@@ -24,25 +25,43 @@ export const ChatScreen: React.FC<Props> = ({ route }) => {
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>('UPCOMING');
-  const [manualEnded, setManualEnded] = useState<boolean>(false);
+  const statusRef = useRef(sessionStatus);
+  statusRef.current = sessionStatus;
+
+  // The appointment is the source of truth for anonymity; the route param is only a fallback.
+  const anonymous = appointment?.is_anonymous ?? isAnonymous;
 
   // 1. Fetch Messages & Schedule Details
-  const load = async () => {
+  const load = useCallback(async () => {
     const [msgData, apptData] = await Promise.all([
       consultationService.getMessages(appointmentId),
       consultationService.getAppointmentDetails(appointmentId),
     ]);
-    setMessages(msgData);
+    // Skip the re-render when nothing new arrived
+    setMessages((prev) =>
+      prev.length === msgData.length && prev[prev.length - 1]?._id === msgData[msgData.length - 1]?._id
+        ? prev
+        : msgData
+    );
     setAppointment(apptData);
-  };
+  }, [appointmentId]);
 
+  // Load on focus and keep polling, so the other person's replies, approval and the
+  // session ending show up without leaving the screen. Stops once the chat is over.
   useFocusEffect(
     useCallback(() => {
       load().catch(() => undefined);
-    }, [appointmentId])
+      const timer = setInterval(() => {
+        if (statusRef.current === 'COMPLETED' || statusRef.current === 'CANCELLED') return;
+        load().catch(() => undefined);
+      }, 4000);
+      return () => clearInterval(timer);
+    }, [load])
   );
 
   // 2. Evaluate Status Based on Appointment Schedule
@@ -67,7 +86,7 @@ export const ChatScreen: React.FC<Props> = ({ route }) => {
       const startTime = new Date(appointment.start_time).getTime();
       const endTime = new Date(appointment.end_time).getTime();
 
-      if (manualEnded || appointment.status === 'completed' || now >= endTime) {
+      if (appointment.status === 'completed' || now >= endTime) {
         setSessionStatus('COMPLETED');
       } else if (now < startTime) {
         setSessionStatus('UPCOMING');
@@ -79,7 +98,7 @@ export const ChatScreen: React.FC<Props> = ({ route }) => {
     checkSchedule();
     const interval = setInterval(checkSchedule, 5000); // Poll status periodically
     return () => clearInterval(interval);
-  }, [appointment, manualEnded]);
+  }, [appointment]);
 
   // Format date string for upcoming view
   const formatStartTime = (timeStr?: string) => {
@@ -102,14 +121,12 @@ export const ChatScreen: React.FC<Props> = ({ route }) => {
             try {
               if (isCounsellor) {
                 await consultationService.completeAppointment(appointmentId);
-                setSessionStatus('COMPLETED');
               } else {
                 await consultationService.updateAppointmentStatus(appointmentId, 'cancelled');
-                setSessionStatus('CANCELLED');
               }
-              setManualEnded(true);
+              await load(); // the server decides the final status
             } catch (error) {
-              Alert.alert('Error', 'Failed to end the chat. Please try again.');
+              Alert.alert('Error', error instanceof Error ? error.message : 'Failed to end the chat. Please try again.');
             }
           },
         },
@@ -124,26 +141,32 @@ export const ChatScreen: React.FC<Props> = ({ route }) => {
 
     let label = 'User';
     if (isMe) {
-      if (!isCounsellor && isAnonymous) label = profile?.anonymous_name || 'Anonymous';
+      if (!isCounsellor && anonymous) label = profile?.anonymous_name || 'Anonymous';
       else if (isCounsellor) label = `${profile?.displayTitle || 'Dr.'} ${profile?.user_name}`;
       else label = profile?.user_name || 'You';
     } else if (typeof sender === 'object') {
-      if (isCounsellor && isAnonymous) label = 'Anonymous student';
-      else label = (sender as User).user_name;
+      if (isCounsellor && anonymous) label = 'Anonymous student';
+      else label = nameWithTitle(sender as User);
     }
 
     return { isMe, label };
   };
 
   const send = async () => {
+    const messageToSend = text.trim();
+    if (!messageToSend || sessionStatus !== 'ACTIVE' || sending) return;
+
+    setSending(true);
+    setText('');
     try {
-      if (!text.trim() || sessionStatus !== 'ACTIVE') return;
-      const messageToSend = text.trim();
-      setText('');
       await consultationService.sendMessage(appointmentId, messageToSend);
       await load();
     } catch (error) {
-      Alert.alert('Error', 'Failed to send message. Please try again.');
+      setText(messageToSend); // don't lose what they typed
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to send message. Please try again.');
+      load().catch(() => undefined); // the session may have just closed
+    } finally {
+      setSending(false);
     }
   };
 
@@ -152,13 +175,15 @@ export const ChatScreen: React.FC<Props> = ({ route }) => {
       {/* Dynamic Header Header Bar with End Chat Button when Active */}
       <View style={styles.sessionHeader}>
         <Text style={styles.statusLabel}>
+          {sessionStatus === 'PENDING' && '⏳ Awaiting Approval'}
           {sessionStatus === 'UPCOMING' && '🔒 Scheduled Session'}
-          {sessionStatus === 'ACTIVE' && '🟢 Session in Progress'}
+          {sessionStatus === 'ACTIVE' && (appointment?.is_dev_room ? '🛠 Dev chatroom (always open)' : '🟢 Session in Progress')}
           {sessionStatus === 'COMPLETED' && '🔒 Session Completed'}
           {sessionStatus === 'CANCELLED' && '🔒 Session Cancelled'}
         </Text>
 
-        {sessionStatus === 'ACTIVE' && (
+        {/* The dev chatroom is permanent, so it has no End Chat */}
+        {sessionStatus === 'ACTIVE' && !appointment?.is_dev_room && (
           <Button
             mode="outlined"
             compact
@@ -178,7 +203,9 @@ export const ChatScreen: React.FC<Props> = ({ route }) => {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <FlatList
+          ref={listRef}
           data={messages}
+          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContainer}
           renderItem={({ item }) => {
@@ -245,6 +272,7 @@ export const ChatScreen: React.FC<Props> = ({ route }) => {
               iconColor={palette.white}
               size={20}
               onPress={send}
+              disabled={sending}
               style={styles.sendButton}
             />
           </View>

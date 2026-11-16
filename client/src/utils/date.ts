@@ -66,3 +66,33 @@ export const MONTHS = [
   "Nov",
   "Dec",
 ];
+const startOfDay = (d: Date) => {
+  const day = new Date(d);
+  day.setHours(0, 0, 0, 0);
+  return day;
+};
+
+export const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
+
+/** The next `count` weekdays (Mon–Fri) starting today, skipping weekends. */
+export const nextWorkdays = (count = 5, from = new Date()): Date[] => {
+  const days: Date[] = [];
+  const cursor = startOfDay(from);
+  while (days.length < count) {
+    if (!isWeekend(cursor)) days.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return days;
+};
+
+/** Monday–Friday of the current week. On a Saturday or Sunday it shows the coming week. */
+export const currentWorkWeek = (from = new Date()): Date[] => {
+  const monday = startOfDay(from);
+  const day = monday.getDay(); // 0 = Sun … 6 = Sat
+  monday.setDate(monday.getDate() + (day === 0 ? 1 : day === 6 ? 2 : 1 - day));
+  return Array.from({ length: 5 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+};

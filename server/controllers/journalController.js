@@ -1,5 +1,5 @@
 const Journal = require('../models/Journal');
-const { analyzeText, legacyScore } = require('../services/sentimentService');
+const { PENDING, runAnalysisJob } = require('../services/analysisJobs');
 const { getDailyStress, applyReview } = require('../services/stressAggregationService');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -10,16 +10,15 @@ const createJournal = asyncHandler(async (req, res) => {
     throw new Error('title and content are required');
   }
   // Analysis is opt-in for journals: only runs when the student consented.
-  const analysis = is_sentiment_enabled ? await analyzeText(content) : undefined;
   const journal = await Journal.create({
     user_id: req.demoUserId,
     title,
     content,
     is_sentiment_enabled: !!is_sentiment_enabled,
-    sentiment_score: legacyScore(analysis),
-    stress_analysis: analysis,
+    stress_analysis: is_sentiment_enabled ? PENDING : undefined,
     tags: req.body.tags || [],
   });
+  if (is_sentiment_enabled) runAnalysisJob(Journal, journal._id, content, { is_sentiment_enabled: true });
   res.status(201).json(journal);
 });
 
@@ -39,6 +38,7 @@ const updateJournal = asyncHandler(async (req, res) => {
 
   const wasEnabled = journal.is_sentiment_enabled;
   const contentChanged = !!content && content !== journal.content;
+  let rerun = false;
 
   if (title) journal.title = title;
   if (content) journal.content = content;
@@ -58,12 +58,12 @@ const updateJournal = asyncHandler(async (req, res) => {
   } else if (contentChanged || !wasEnabled) {
     // Only re-run the model when the text changed or consent was just given.
     // A fresh analysis resets any earlier affirm/correct decision.
-    const analysis = await analyzeText(journal.content);
-    journal.stress_analysis = analysis;
-    journal.sentiment_score = legacyScore(analysis);
+    journal.stress_analysis = PENDING;
+    rerun = true;
   }
 
   await journal.save();
+  if (rerun) runAnalysisJob(Journal, journal._id, journal.content, { is_sentiment_enabled: true });
   res.json(journal);
 });
 
