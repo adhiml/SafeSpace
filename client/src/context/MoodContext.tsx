@@ -1,6 +1,7 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { MoodEntry } from '../types';
 import * as moodService from '../services/moodService';
+import { useRole } from './RoleContext';
 
 interface MoodContextValue {
   latestMood: MoodEntry | null;
@@ -15,6 +16,13 @@ const MoodContext = createContext<MoodContextValue | undefined>(undefined);
 export const MoodProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [latestMood, setLatestMood] = useState<MoodEntry | null>(null);
   const [needsCheckIn, setNeedsCheckIn] = useState(true);
+  const { userId } = useRole();
+
+  // Signing in as someone else starts from a clean slate.
+  useEffect(() => {
+    setLatestMood(null);
+    setNeedsCheckIn(true);
+  }, [userId]);
 
   const refreshMoods = useCallback(async () => {
     try {

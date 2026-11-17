@@ -20,14 +20,15 @@ interface NotificationContextValue {
 const NotificationContext = createContext<NotificationContextValue | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { userId } = useRole();
+  const { userId, account } = useRole();
+  const frozenOut = account?.state === 'unverified'; // such accounts can't load notifications at all
   const [items, setItems] = useState<Notification[]>([]);
   const [banner, setBanner] = useState<Notification | null>(null);
   // Ids already seen. null = first load not done yet, so existing notifications never pop a banner.
   const seen = useRef<Set<string> | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || frozenOut) return;
     const data = await consultationService.getNotifications();
     setItems(data);
 
@@ -39,14 +40,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const fresh = data.filter((n) => !n.is_read && !known.has(n._id));
     fresh.forEach((n) => known.add(n._id));
     if (fresh.length > 0) setBanner(fresh[0]); // the API returns newest first
-  }, [userId]);
+  }, [userId, frozenOut]);
 
   // Start over whenever the signed-in user changes, then poll while the app is open.
   useEffect(() => {
     seen.current = null;
     setItems([]);
     setBanner(null);
-    if (!userId) return;
+    if (!userId || frozenOut) return;
 
     refresh().catch(() => undefined);
     const timer = setInterval(() => refresh().catch(() => undefined), POLL_MS);
@@ -57,7 +58,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       clearInterval(timer);
       sub.remove();
     };
-  }, [userId, refresh]);
+  }, [userId, frozenOut, refresh]);
 
   const markRead = useCallback(
     async (id: string) => {

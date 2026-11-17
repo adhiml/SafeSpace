@@ -5,11 +5,12 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Avatar } from '../../components/Avatar';
 import { Card } from '../../components/Card';
+import { DeleteAccountSection } from '../../components/DeleteAccountSection';
 import { InfoTip } from '../../components/InfoTip';
+import { NotificationPreferences } from '../../components/NotificationPreferences';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { SwitchRoleModal } from '../../components/SwitchRoleModal';
 import { getRoleLabel } from '../../constants/roleUsers';
-import { useNotifications } from '../../context/NotificationContext';
 import { useRole } from '../../context/RoleContext';
 import { SharedStackParamList } from '../../types';
 import { colors, palette, radius, spacing } from '../../utils/theme';
@@ -34,8 +35,7 @@ const InfoRow: React.FC<InfoRowProps> = ({ title, value, icon }) => (
 );
 
 export const SettingsScreen: React.FC = () => {
-  const { role, profile, isCounsellor, switchRole, clearRole } = useRole();
-  const { unreadCount } = useNotifications();
+  const { role, profile, isCounsellor, switchRole, signOut, account } = useRole();
   const [modalVisible, setModalVisible] = useState(false);
   const navigation = useNavigation<NavigationProp>();
 
@@ -53,6 +53,9 @@ export const SettingsScreen: React.FC = () => {
       ? [{ title: 'Anonymous Name', value: profile.anonymous_name, icon: 'incognito' }]
       : []),
     ...(profile.gender ? [{ title: 'Gender', value: profile.gender, icon: 'gender-male-female' }] : []),
+    ...(!isCounsellor && profile.year_of_study
+      ? [{ title: 'Year of study', value: profile.year_of_study === 'Postgraduate' ? 'Postgraduate' : `Year ${profile.year_of_study}`, icon: 'calendar-account-outline' }]
+      : []),
     {
       title: isCounsellor ? 'Specialization' : 'Faculty',
       value: (isCounsellor ? profile.specialization : profile.faculty) || (isCounsellor ? 'Counselling Specialist' : 'Not set'),
@@ -61,9 +64,9 @@ export const SettingsScreen: React.FC = () => {
   ];
 
   const confirmSignOut = () => {
-    Alert.alert('Sign out', 'You will return to the role selection screen.', [
+    Alert.alert('Sign out', account ? 'You will need to log in again.' : 'You will return to the role selection screen.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: clearRole },
+      { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
     ]);
   };
 
@@ -101,19 +104,14 @@ export const SettingsScreen: React.FC = () => {
           ))}
         </Card>
 
-        {/* Notifications and privacy */}
-        <Text style={styles.sectionHeader}>NOTIFICATIONS & PRIVACY</Text>
-        <Card style={styles.sectionCard}>
-          <List.Item
-            title="Notifications"
-            description={unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
-            onPress={() => navigation.navigate('Notifications')}
-            left={(props) => <List.Icon {...props} icon="bell-outline" color={colors.secondary} />}
-            right={(props) => <List.Icon {...props} icon="chevron-right" color={colors.textMuted} />}
-          />
-          {!isCounsellor && (
-            <>
-              <Divider />
+        {/* Notifications: choose which ones you want */}
+        <Text style={styles.sectionHeader}>NOTIFICATIONS</Text>
+        <NotificationPreferences isCounsellor={isCounsellor} />
+
+        {!isCounsellor && (
+          <>
+            <Text style={styles.sectionHeader}>PRIVACY</Text>
+            <Card style={styles.sectionCard}>
               <List.Item
                 title="AI analysis & privacy"
                 description="How your writing is analyzed"
@@ -124,9 +122,9 @@ export const SettingsScreen: React.FC = () => {
                   </View>
                 )}
               />
-            </>
-          )}
-        </Card>
+            </Card>
+          </>
+        )}
 
         {/* Security */}
                   <Text style={styles.sectionHeader}>SECURITY</Text>
@@ -178,6 +176,16 @@ export const SettingsScreen: React.FC = () => {
         >
           <Text style={styles.signOutText}>Sign out</Text>
         </Pressable>
+
+        {/* Demo accounts can't be deleted, so this only shows for real accounts */}
+        {account && (
+          <>
+            <Text style={[styles.sectionHeader, styles.dangerHeader]}>DANGER ZONE</Text>
+            <Card style={styles.dangerCard}>
+              <DeleteAccountSection />
+            </Card>
+          </>
+        )}
       </ScrollView>
     </ScreenContainer>
   );
@@ -249,6 +257,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryLight,
   },
   editIconPressed: { opacity: 0.7, transform: [{ scale: 0.92 }] },
+  dangerHeader: { marginTop: spacing.lg },
+  dangerCard: { padding: 0, overflow: 'hidden', borderWidth: 1, borderColor: palette.cancelledBg },
   signOut: {
     marginTop: spacing.sm,
     paddingVertical: 14,

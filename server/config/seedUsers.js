@@ -25,6 +25,8 @@ const seedUsers = async () => {
       { upsert: true }
     );
 
+    await User.updateOne({ _id: user._id }, { $set: { is_demo: true } });
+
     // Counsellors written before display_title existed get the default once.
     if (user.role === 'counsellor') {
       await User.updateOne(

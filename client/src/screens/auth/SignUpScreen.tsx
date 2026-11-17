@@ -1,147 +1,223 @@
-import { View, Text, TouchableOpacity } from 'react-native'
-import React from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'react-native';
-import { spacing, colors } from '../../utils/theme';
-import { StyleSheet } from 'react-native';
-import { TextInput } from 'react-native-paper';
+import React, { useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Icon, Text, TextInput } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import { Card } from '../../components/Card';
+import { ChipGroup } from '../../components/forms/ChipGroup';
+import { SelectField } from '../../components/forms/SelectField';
+import { PrimaryButton } from '../../components/PrimaryButton';
+import { ScreenContainer } from '../../components/ScreenContainer';
+import { EMAIL_DOMAIN, FACULTIES, GENDERS, UserKind, YEARS_OF_STUDY } from '../../constants/options';
+import { useRole } from '../../context/RoleContext';
+import * as authService from '../../services/authService';
+import { colors, palette, radius, spacing } from '../../utils/theme';
+
+const KIND_LABEL: Record<UserKind, string> = { student: 'Student', counsellor: 'Counsellor' };
+const MIN_PASSWORD = 8;
 
 export const SignUpScreen = () => {
   const navigation = useNavigation();
+  const { signIn } = useRole();
+
+  const [kind, setKind] = useState<UserKind>('student');
+  const [userName, setUserName] = useState('');
+  const [anonymousName, setAnonymousName] = useState('');
+  const [faculty, setFaculty] = useState('');
+  const [year, setYear] = useState('');
+  const [specialization, setSpecialization] = useState('');
+  const [gender, setGender] = useState('');
+  const [emailLocal, setEmailLocal] = useState(''); // the part before the "@"
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const domain = EMAIL_DOMAIN[kind];
+  const isStudent = kind === 'student';
+
+  // Typing or pasting a full address works too: the ending decides Student / Counsellor.
+  const onEmailChange = (text: string) => {
+    setError(null);
+    if (!text.includes('@')) return setEmailLocal(text.trim());
+    const [local, rest] = [text.split('@')[0], '@' + text.split('@').slice(1).join('@')];
+    setEmailLocal(local.trim());
+    (Object.keys(EMAIL_DOMAIN) as UserKind[]).forEach((k) => {
+      if (rest.toLowerCase() === EMAIL_DOMAIN[k]) setKind(k);
+    });
+  };
+
+  const submit = async () => {
+    const name = userName.trim();
+    const alias = anonymousName.trim();
+
+    if (!name) return setError('Enter your display name.');
+    if (isStudent) {
+      if (!alias) return setError('Enter an anonymous name.');
+      if (alias.toLowerCase() === name.toLowerCase()) return setError('Your anonymous name must be different from your real name.');
+      if (!faculty) return setError('Choose your faculty.');
+      if (!year) return setError('Choose your year of study.');
+    } else if (!specialization.trim()) {
+      return setError('Enter your specialization.');
+    }
+    if (!gender) return setError('Choose your gender.');
+    if (!emailLocal) return setError('Enter your university email.');
+    if (password.length < MIN_PASSWORD) return setError(`Your password must be at least ${MIN_PASSWORD} characters.`);
+    if (password !== confirm) return setError("The two passwords don't match.");
+
+    try {
+      setSaving(true);
+      setError(null);
+      const result = await authService.register({
+        email: `${emailLocal}${domain}`,
+        password,
+        user_name: name,
+        gender,
+        ...(isStudent
+          ? { anonymous_name: alias, faculty, year_of_study: year }
+          : { specialization: specialization.trim() }),
+      });
+
+      await signIn(result); // opens the app, or the "enter your code" screen if verification is required
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not create your account.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const input = { mode: 'outlined' as const, style: styles.input, outlineColor: colors.border, activeOutlineColor: colors.primary };
+  const eye = (
+    <TextInput.Icon
+      icon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+      onPress={() => setShowPassword((v) => !v)}
+      forceTextInputFocus={false}
+      accessibilityLabel={showPassword ? 'Hide passwords' : 'Show passwords'}
+    />
+  );
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
-        <Image source={require('../../assets/images/signup.png')}
-          style={{ width: 200, height: 100, marginTop: 20 }} />
-        <Text style={styles.textWelcome}>
-          Create an Account
-        </Text>
-        <View style={styles.loginContainer}>
-          <Text style={styles.titleText}>Name</Text>
-          <TextInput
-            mode="flat"
-            underlineColor="transparent"
-            activeUnderlineColor="transparent"
-            placeholder="Enter your  name"
-            placeholderTextColor={colors.textMuted}
-            style={styles.input}
-          />
-          <Text style={styles.titleText}>Anonymous Name</Text>
-          <TextInput
-            mode="flat"
-            underlineColor="transparent"
-            activeUnderlineColor="transparent"
-            placeholder="Enter your anonymous name"
-            placeholderTextColor={colors.textMuted}
-            style={styles.input}
-          />
-          <Text style={styles.titleText}>Email Address</Text>
-          <TextInput
-            mode="flat"
-            underlineColor="transparent"
-            activeUnderlineColor="transparent"
-            placeholder="Enter your email address"
-            placeholderTextColor={colors.textMuted}
-            style={styles.input}
-          />
-          <Text style={styles.titleText}>Password</Text>
-          <TextInput
-            mode="flat"
-            underlineColor="transparent"
-            activeUnderlineColor="transparent"
-            placeholder="Enter your password"
-            placeholderTextColor={colors.textMuted}
-            secureTextEntry
-            style={styles.input}
-          />
-          <TouchableOpacity style={styles.loginButton}>
-            <Text
-              style={{ ...styles.titleText, color: colors.surface, textAlign: 'center', fontWeight: 'bold' }}>
-              Sign Up
-            </Text>
-          </TouchableOpacity>
-          <Text
-            style={{ ...styles.titleText, color: "#8e8b8b", textAlign: 'center', fontWeight: 'bold' }}>
-            Or
-          </Text>
-          <TouchableOpacity style={{ ...styles.loginButton, backgroundColor: "#F1E6DA", borderColor: colors.border }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
-              <Image source={require('../../assets/images/google.png')}
-                style={{ width: 20, height: 20 }} />
-              <Text
-                style={{ ...styles.titleText, color: colors.primary, textAlign: 'center', fontWeight: 'bold' }}>
-                Continue with Google
-              </Text>
-            </View>
-          </TouchableOpacity>
-          <View
-            style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-            <Text
-              style={styles.existingAccountText}>
-              Already have an account?
-            </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login' as never)}>
-              <Text
-                style={{ ...styles.existingAccountText, fontWeight: 'bold', fontSize: 16 }}>
-                Log In
-              </Text>
-            </TouchableOpacity>
+    <ScreenContainer title="Sign up" showHeader={false}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Text style={styles.brand}>tenang.</Text>
+        <Text style={styles.heading}>Create your account</Text>
+        <Text style={styles.sub}>Use your university email. We check it against the university list.</Text>
+
+        <Card style={styles.card}>
+          {/* Student / Counsellor: picking one fills in the matching email ending */}
+          <Text style={[styles.label, styles.firstLabel]}>I am a</Text>
+          <View style={styles.kindRow}>
+            {(Object.keys(KIND_LABEL) as UserKind[]).map((k) => {
+              const selected = k === kind;
+              return (
+                <Pressable
+                  key={k}
+                  onPress={() => {
+                    setKind(k);
+                    setError(null);
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  style={[styles.kind, selected && styles.kindSelected]}
+                >
+                  <Icon source={selected ? 'check-circle' : 'circle-outline'} size={20} color={selected ? palette.white : colors.textMuted} />
+                  <View>
+                    <Text style={[styles.kindTitle, selected && styles.kindTextSelected]}>{KIND_LABEL[k]}</Text>
+                    <Text style={[styles.kindSub, selected && styles.kindTextSelected]}>{EMAIL_DOMAIN[k]}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
+
+          <Text style={styles.label}>Display name</Text>
+          <TextInput {...input} value={userName} onChangeText={(v) => { setError(null); setUserName(v); }} maxLength={60} autoCapitalize="words" />
+
+          {isStudent ? (
+            <>
+              <Text style={styles.label}>Anonymous name</Text>
+              <TextInput {...input} value={anonymousName} onChangeText={(v) => { setError(null); setAnonymousName(v); }} maxLength={30} autoCapitalize="none" autoCorrect={false} />
+              <Text style={styles.hint}>Other students see this instead of your name. It must be unique.</Text>
+
+              <Text style={styles.label}>Faculty</Text>
+              <SelectField value={faculty} options={FACULTIES} onChange={(v) => { setError(null); setFaculty(v); }} placeholder="Choose your faculty" title="Faculty" />
+
+              <Text style={styles.label}>Year of study</Text>
+              <ChipGroup options={YEARS_OF_STUDY} value={year} onChange={(v) => { setError(null); setYear(v); }} labelFor={(y) => (y === 'Postgraduate' ? y : `Year ${y}`)} />
+            </>
+          ) : (
+            <>
+              <Text style={styles.label}>Specialization</Text>
+              <TextInput {...input} value={specialization} onChangeText={(v) => { setError(null); setSpecialization(v); }} maxLength={100} autoCapitalize="words" />
+            </>
+          )}
+
+          <Text style={styles.label}>Gender</Text>
+          <ChipGroup options={GENDERS} value={gender} onChange={(v) => { setError(null); setGender(v); }} />
+
+          <Text style={styles.label}>University email</Text>
+          <TextInput
+            {...input}
+            value={emailLocal}
+            onChangeText={onEmailChange}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            right={<TextInput.Affix text={domain} />}
+          />
+
+          <Text style={styles.label}>Password</Text>
+          <TextInput {...input} value={password} onChangeText={(v) => { setError(null); setPassword(v); }} secureTextEntry={!showPassword} autoCapitalize="none" autoCorrect={false} maxLength={128} right={eye} />
+          <Text style={styles.hint}>At least {MIN_PASSWORD} characters.</Text>
+
+          <Text style={styles.label}>Confirm password</Text>
+          <TextInput {...input} value={confirm} onChangeText={(v) => { setError(null); setConfirm(v); }} secureTextEntry={!showPassword} autoCapitalize="none" autoCorrect={false} maxLength={128} right={eye} />
+        </Card>
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <PrimaryButton label={saving ? 'Creating account…' : 'Sign up'} onPress={submit} loading={saving} disabled={saving} />
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Already have an account?</Text>
+          <Pressable onPress={() => navigation.navigate('Login' as never)} hitSlop={8}>
+            <Text style={styles.footerLink}>Log in</Text>
+          </Pressable>
         </View>
-      </View>
-    </SafeAreaView>
+      </KeyboardAvoidingView>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: 'transparent'
-  },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 15,
-  },
-  textWelcome: {
-    fontSize: 30,
-    textAlign: 'center',
-    color: colors.primary,
-    fontWeight: 'bold',
+  brand: { fontSize: 34, fontWeight: '800', color: colors.primary, textAlign: 'center', marginTop: spacing.sm },
+  heading: { fontSize: 22, fontWeight: '700', color: colors.text, textAlign: 'center', marginTop: spacing.xs },
+  sub: { fontSize: 13, color: colors.textMuted, textAlign: 'center', marginTop: 4, marginBottom: spacing.md },
+  card: { padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surface },
+  label: { fontSize: 12, fontWeight: '600', color: colors.secondary, marginTop: spacing.md },
+  firstLabel: { marginTop: 0 },
+  input: { backgroundColor: colors.surface, marginTop: spacing.xs },
+  hint: { fontSize: 11, color: colors.textMuted, marginTop: 4, lineHeight: 15 },
 
-  },
-  loginContainer: {
+  kindRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
+  kind: {
     flex: 1,
-    backgroundColor: colors.border,
-    padding: spacing.xl,
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 50,
-    shadowColor: colors.shadow,
-    width: '100%',
-    gap: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.sm + 2,
+    borderRadius: radius.md,
+    backgroundColor: palette.surfaceAlt,
+    borderWidth: 1,
+    borderColor: palette.border,
   },
-  titleText: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: 500,
-  },
-  input: {
-    backgroundColor: "#f4efef",
-    borderRadius: 10,
-    height: 48,
-  },
-  loginButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    width: '100%',
-    borderRadius: 8,
-  },
-  existingAccountText: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: 500
-  },
+  kindSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  kindTitle: { fontSize: 14, fontWeight: '700', color: colors.text },
+  kindSub: { fontSize: 10, color: colors.textMuted, marginTop: 1 },
+  kindTextSelected: { color: palette.white },
+
+  error: { color: palette.cancelledText, fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: spacing.md, marginBottom: spacing.xs },
+  footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginVertical: spacing.md },
+  footerText: { color: colors.textMuted, fontSize: 14 },
+  footerLink: { color: colors.primary, fontSize: 15, fontWeight: '700' },
 });

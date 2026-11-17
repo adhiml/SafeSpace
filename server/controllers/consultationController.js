@@ -5,6 +5,7 @@ const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
 const { DEMO_USERS } = require('../utils/demoUsers');
 const { slotError, SLOT_BLOCKING_STATUSES } = require('../utils/slots');
+const { notify } = require('../services/notify');
 
 const COUNSELLOR_ID = 'counsellor_001';
 const SESSION_DURATION_MINUTES = 60; // appointments are booked in fixed 1-hour slots
@@ -76,9 +77,10 @@ const createAppointment = asyncHandler(async (req, res) => {
     is_anonymous: !!is_anonymous,
   });
 
-  await Notification.create({
-    user_id: counsellor_user_id,
-    appointment_id: appointment._id,
+  await notify({
+    userId: counsellor_user_id,
+    type: 'new_request',
+    appointmentId: appointment._id,
     title: 'New appointment request',
     message: 'A student has requested a counselling session.',
   });
@@ -97,7 +99,7 @@ const getAppointments = asyncHandler(async (req, res) => {
       ? { counsellor_user_id: req.demoUserId, is_dev_room: { $ne: true } }
       : { student_user_id: req.demoUserId, is_dev_room: { $ne: true } };
 
-  const appointments = await Appointment.find(filter)
+  const appointments = await Appointment.find(req.readCutoff ? { ...filter, created_at: { $lte: req.readCutoff } } : filter)
     .sort({ appointment_datetime: -1 })
     .populate('student_user_id', 'user_name anonymous_name')
     .populate('counsellor_user_id', 'user_name display_title specialization');
@@ -146,9 +148,11 @@ const updateAppointmentStatus = asyncHandler(async (req, res) => {
   appointment.status = status;
   await appointment.save();
 
-  await Notification.create({
-    user_id: role === 'counsellor' ? appointment.student_user_id : appointment.counsellor_user_id,
-    appointment_id: appointment._id,
+  // A counsellor approving or declining is what the student's "Counsellor approval" setting controls.
+  await notify({
+    userId: role === 'counsellor' ? appointment.student_user_id : appointment.counsellor_user_id,
+    type: role === 'counsellor' && ['approved', 'cancelled'].includes(status) ? 'approval' : 'appointment_update',
+    appointmentId: appointment._id,
     title: 'Appointment status updated',
     message: `Your appointment has been ${status}.`,
   });
@@ -164,9 +168,10 @@ const updateAppointmentStatus = asyncHandler(async (req, res) => {
     for (const other of competing) {
       other.status = 'cancelled';
       await other.save();
-      await Notification.create({
-        user_id: other.student_user_id,
-        appointment_id: other._id,
+      await notify({
+        userId: other.student_user_id,
+        type: 'approval',
+        appointmentId: other._id,
         title: 'Time slot no longer available',
         message: 'Another session was confirmed for that time. Please book a different slot.',
       });
@@ -245,6 +250,24 @@ const sendMessage = asyncHandler(async (req, res) => {
   });
 
   await chatMessage.populate('sender_id', 'user_name anonymous_name display_title');
+
+  // Tell the other person, but only once until they've seen it, so a busy chat doesn't flood them.
+  const recipientId = String(appointment.student_user_id) === req.demoUserId ? appointment.counsellor_user_id : appointment.student_user_id;
+  const alreadyNotified = await Notification.exists({
+    user_id: recipientId,
+    type: 'message',
+    appointment_id: appointment._id,
+    is_read: false,
+  });
+  if (!alreadyNotified) {
+    await notify({
+      userId: recipientId,
+      type: 'message',
+      appointmentId: appointment._id,
+      title: 'New message',
+      message: 'You have a new message in your counselling chat.',
+    });
+  }
   res.status(201).json(chatMessage);
 });
 
@@ -259,7 +282,10 @@ const getMessages = asyncHandler(async (req, res) => {
     throw new Error('Not authorized to view this conversation');
   }
 
-  const messages = await ChatMessage.find({ appointment_id: req.params.appointmentId })
+  const messages = await ChatMessage.find({
+    appointment_id: req.params.appointmentId,
+    ...(req.readCutoff ? { sent_at: { $lte: req.readCutoff } } : {}),
+  })
     .sort({ sent_at: 1 })
     .populate('sender_id', 'user_name anonymous_name display_title');
 
@@ -318,7 +344,10 @@ const getBookedSlots = asyncHandler(async (req, res) => {
 });
 
 const getNotifications = asyncHandler(async (req, res) => {
-  const notifications = await Notification.find({ user_id: req.demoUserId }).sort({
+  const notifications = await Notification.find({
+    user_id: req.demoUserId,
+    ...(req.readCutoff ? { created_at: { $lte: req.readCutoff } } : {}),
+  }).sort({
     created_at: -1,
   });
   res.json(notifications);

@@ -3,13 +3,14 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
-const { resolveDemoUser } = require('./middleware/demoUser');
+const { authenticate } = require('./middleware/auth');
 
 const moodRoutes = require('./routes/moodRoutes');
 const journalRoutes = require('./routes/journalRoutes');
 const peerRoutes = require('./routes/peerRoutes');
 const consultationRoutes = require('./routes/consultationRoutes');
 const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 connectDB();
 
@@ -17,11 +18,19 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use('/api', resolveDemoUser);
+// Express leaves req.body undefined when a request has no body; handlers expect an object.
+app.use((req, res, next) => {
+  if (req.body === undefined) req.body = {};
+  next();
+});
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', app: 'SafeSpace API', demoUserId: req.demoUserId });
+  res.json({ status: 'ok', app: 'SafeSpace API' });
 });
+
+// Register / login are open; every route below requires a signed-in user.
+app.use('/api/auth', authRoutes);
+app.use('/api', authenticate());
 
 app.use('/api/users', userRoutes);
 app.use('/api/moods', moodRoutes);

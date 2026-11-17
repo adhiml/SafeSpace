@@ -10,11 +10,15 @@ export interface UserProfileDto {
   faculty?: string;
   specialization?: string;
   display_title?: string;
+  year_of_study?: string;
 }
 
 /** Fields a user may change. Email is read-only; students and counsellors each have their own set. */
 export type ProfileEdits = Partial<
-  Pick<UserProfileDto, 'user_name' | 'anonymous_name' | 'gender' | 'faculty' | 'specialization' | 'display_title'>
+  Pick<
+    UserProfileDto,
+    'user_name' | 'anonymous_name' | 'gender' | 'faculty' | 'year_of_study' | 'specialization' | 'display_title'
+  >
 >;
 
 export const getMyProfile = async () => {

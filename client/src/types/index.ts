@@ -17,6 +17,7 @@ export interface User { // holds core
   anonymous_name?: string;
   email?: string;
   display_title?: string; // counsellors only, e.g. "Dr."
+  year_of_study?: string; // students only
   role: UserRole;
   gender?: string;
   faculty?: string;

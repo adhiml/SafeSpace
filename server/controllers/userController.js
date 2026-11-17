@@ -1,22 +1,26 @@
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
 const { hashPassword, verifyPassword } = require('../utils/password');
+const { aliasProblem } = require('../utils/profileRules');
+const { FACULTIES, YEARS_OF_STUDY, GENDERS } = require('../utils/options');
 
 // Fields each role may edit, and their maximum lengths. Email is read-only.
 const EDITABLE = {
-  student: ['user_name', 'anonymous_name', 'gender', 'faculty'],
-  counsellor: ['user_name', 'display_title', 'specialization'],
+  student: ['user_name', 'anonymous_name', 'gender', 'faculty', 'year_of_study'],
+  counsellor: ['user_name', 'display_title', 'specialization', 'gender'],
 };
 const MAX_LENGTH = {
   user_name: 60,
   anonymous_name: 30,
   gender: 30,
   faculty: 80,
+  year_of_study: 12,
   specialization: 100,
   display_title: 20,
 };
-
-const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Fields that must be one of a fixed list (checked only when the value actually changes,
+// so older accounts with free-text values can still save their other fields).
+const CHOICES = { gender: GENDERS, faculty: FACULTIES, year_of_study: YEARS_OF_STUDY };
 
 const toProfile = (u) => ({
   _id: u._id,
@@ -26,6 +30,7 @@ const toProfile = (u) => ({
   role: u.role,
   gender: u.gender,
   faculty: u.faculty,
+  year_of_study: u.year_of_study,
   specialization: u.specialization,
   display_title: u.display_title,
 });
@@ -54,27 +59,21 @@ const updateMe = asyncHandler(async (req, res) => {
     if (typeof raw !== 'string') fail(res, 400, `${field} must be text`);
     const value = raw.trim();
     if (value.length > MAX_LENGTH[field]) fail(res, 400, `${field} must be at most ${MAX_LENGTH[field]} characters`);
+    if (CHOICES[field] && value && value !== me[field] && !CHOICES[field].includes(value)) {
+      fail(res, 400, `Choose a valid option for ${field.replace(/_/g, ' ')}`);
+    }
     updates[field] = value;
   }
 
   if ('user_name' in updates && !updates.user_name) fail(res, 400, 'Your name cannot be empty');
 
-  // The alias is what other students see instead of the real name, so it must be
-  // present, unique, and different from the real name.
   if (!isCounsellor && ('anonymous_name' in updates || 'user_name' in updates)) {
-    const alias = updates.anonymous_name ?? me.anonymous_name;
-    const realName = updates.user_name ?? me.user_name;
-    if (!alias) fail(res, 400, 'Your anonymous name cannot be empty');
-    if (alias.toLowerCase() === realName.toLowerCase()) {
-      fail(res, 400, 'Your anonymous name must be different from your real name');
-    }
-    if ('anonymous_name' in updates) {
-      const taken = await User.exists({
-        _id: { $ne: me._id },
-        anonymous_name: new RegExp(`^${escapeRegExp(alias)}$`, 'i'),
-      });
-      if (taken) fail(res, 409, 'That anonymous name is already taken');
-    }
+    const problem = await aliasProblem(
+      updates.anonymous_name ?? me.anonymous_name,
+      updates.user_name ?? me.user_name,
+      me._id
+    );
+    if (problem) fail(res, problem.status, problem.message);
   }
 
   Object.assign(me, updates);
@@ -122,4 +121,27 @@ const changePassword = asyncHandler(async (req, res) => {
   res.json({ message: 'Password changed' });
 });
 
-module.exports = { getMe, updateMe, changePassword };
+const NOTIFICATION_KEYS = ['mood_checkin', 'approval', 'messages', 'appointment_reminder', 'recommendation_feedback', 'new_requests'];
+
+const pickPrefs = (user) => Object.fromEntries(NOTIFICATION_KEYS.map((k) => [k, user.notification_prefs?.[k] !== false]));
+
+const getNotificationSettings = asyncHandler(async (req, res) => {
+  const me = await User.findById(req.demoUserId);
+  if (!me) fail(res, 404, 'User not found');
+  res.json(pickPrefs(me));
+});
+
+const updateNotificationSettings = asyncHandler(async (req, res) => {
+  const me = await User.findById(req.demoUserId);
+  if (!me) fail(res, 404, 'User not found');
+
+  for (const [key, value] of Object.entries(req.body || {})) {
+    if (!NOTIFICATION_KEYS.includes(key)) fail(res, 400, `Unknown notification setting: ${key}`);
+    if (typeof value !== 'boolean') fail(res, 400, `${key} must be true or false`);
+    me.set(`notification_prefs.${key}`, value);
+  }
+  await me.save();
+  res.json(pickPrefs(me));
+});
+
+module.exports = { getMe, updateMe, changePassword, toProfile, getNotificationSettings, updateNotificationSettings };

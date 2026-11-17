@@ -5,7 +5,9 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "import:emails": "node scripts/importAllowedEmails.js",
+    "set:verified": "node scripts/setVerified.js"
   },
   "license": "ISC",
   "dependencies": {

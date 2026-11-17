@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const seedUsers = require('./seedUsers');
 const { failStalePending } = require('../services/analysisJobs');
 const seedDevRoom = require('./seedDevRoom');
+const { start: startReminderJobs } = require('../services/reminderJobs');
 
 const connectDB = async () => {
   try {
@@ -9,6 +10,7 @@ const connectDB = async () => {
     console.log(`MongoDB connected: ${conn.connection.host}`);
     await seedUsers();
     if (process.env.NODE_ENV !== 'production') await seedDevRoom();
+    startReminderJobs();
     await failStalePending(require('../models/Journal'), require('../models/PeerPost'));
   } catch (error) {
     console.error('MongoDB connection error:', error.message);

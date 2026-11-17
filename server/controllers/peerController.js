@@ -31,7 +31,7 @@ const createPost = asyncHandler(async (req, res) => {
 });
 
 const getPosts = asyncHandler(async (req, res) => {
-  const posts = await PeerPost.find()
+  const posts = await PeerPost.find(req.readCutoff ? { created_at: { $lte: req.readCutoff } } : {})
     .sort({ created_at: -1 })
     .populate('user_id', 'anonymous_name user_name')
     .limit(50);

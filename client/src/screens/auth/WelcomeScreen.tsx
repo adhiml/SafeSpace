@@ -43,13 +43,15 @@ export const WelcomeScreen = () => {
             </Text>
           </TouchableOpacity>
         </View>
-        <View>
-          <TouchableOpacity onPress={() => navigation.navigate('RoleSelectScreen' as never)}>
-            <Text style={{ ...styles.existingAccountText, color: colors.textMuted }}>
-              Continue as Developer
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {__DEV__ && (
+          <View>
+            <TouchableOpacity onPress={() => navigation.navigate('RoleSelectScreen' as never)}>
+              <Text style={{ ...styles.existingAccountText, color: colors.textMuted }}>
+                Continue as Developer
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
       </View>
     </SafeAreaView>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AccountBanner } from './AccountBanner';
 import { UniversalHeader } from './UniversalHeader';
 import { colors, spacing } from '../utils/theme';
 
@@ -35,7 +36,8 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
         showActions={!hideHeaderActions}
       />
     )}
-    
+    <AccountBanner />
+
     {scroll ? (
       <ScrollView
         style={styles.flex}

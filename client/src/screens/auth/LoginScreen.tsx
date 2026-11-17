@@ -1,138 +1,104 @@
-import { View, Text, TouchableOpacity } from 'react-native'
-import React from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'react-native';
-import { spacing, colors } from '../../utils/theme';
-import { StyleSheet } from 'react-native';
-import { TextInput } from 'react-native-paper';
+import React, { useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import { Card } from '../../components/Card';
+import { PrimaryButton } from '../../components/PrimaryButton';
+import { ScreenContainer } from '../../components/ScreenContainer';
+import { useRole } from '../../context/RoleContext';
+import * as authService from '../../services/authService';
+import { colors, palette, radius, spacing } from '../../utils/theme';
 
 export const LoginScreen = () => {
   const navigation = useNavigation();
+  const { signIn } = useRole();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async () => {
+    if (!email.trim() || !password) return setError('Enter your email and password.');
+    try {
+      setSaving(true);
+      setError(null);
+      await signIn(await authService.login(email.trim(), password)); // the app opens as soon as this is set
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not log in.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const input = { mode: 'outlined' as const, style: styles.input, outlineColor: colors.border, activeOutlineColor: colors.primary };
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
-        <Image source={require('../../assets/images/login.png')}
-          style={{ width: 350, height: 300 }} />
-        <Text style={styles.textWelcome}>
-          Welcome Back!
-        </Text>
-        <View style={styles.loginContainer}>
-          <Text style={styles.titleText}>Email Address</Text>
+    <ScreenContainer title="Log in" showHeader={false}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.wrap}>
+        <Text style={styles.brand}>tenang.</Text>
+        <Text style={styles.heading}>Welcome back</Text>
+        <Text style={styles.sub}>Log in with your university email.</Text>
+
+        <Card style={styles.card}>
+          <Text style={[styles.label, styles.firstLabel]}>Email address</Text>
           <TextInput
-            mode="flat"
-            underlineColor="transparent"
-            activeUnderlineColor="transparent"
-            placeholder="Enter your email address"
+            {...input}
+            value={email}
+            onChangeText={(v) => { setError(null); setEmail(v); }}
+            placeholder="you@siswa.um.edu.my"
             placeholderTextColor={colors.textMuted}
-            style={styles.input}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
           />
-          <Text style={styles.titleText}>Password</Text>
+
+          <Text style={styles.label}>Password</Text>
           <TextInput
-            mode="flat"
-            underlineColor="transparent"
-            activeUnderlineColor="transparent"
-            placeholder="Enter your password"
-            placeholderTextColor={colors.textMuted}
-            secureTextEntry
-            style={styles.input}
+            {...input}
+            value={password}
+            onChangeText={(v) => { setError(null); setPassword(v); }}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+            right={
+              <TextInput.Icon
+                icon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                onPress={() => setShowPassword((v) => !v)}
+                forceTextInputFocus={false}
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              />
+            }
           />
-          <TouchableOpacity >
-            <Text
-              style={{
-                ...styles.titleText, flexDirection: 'row',
-                justifyContent: 'flex-end', textAlign: 'right', color: "#8e8b8b"
-              }}>
-              Forget Password?
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.loginButton}>
-            <Text
-              style={{ ...styles.titleText, color: colors.surface, textAlign: 'center', fontWeight: 'bold' }}>
-              Login
-            </Text>
-          </TouchableOpacity>
-          <Text
-            style={{ ...styles.titleText, color: "#8e8b8b", textAlign: 'center', fontWeight: 'bold' }}>
-            Or
-          </Text>
-          <TouchableOpacity style={{ ...styles.loginButton, backgroundColor: "#F1E6DA", borderColor: colors.border }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
-              <Image source={require('../../assets/images/google.png')}
-                style={{ width: 20, height: 20 }} />
-              <Text
-                style={{ ...styles.titleText, color: colors.primary, textAlign: 'center', fontWeight: 'bold' }}>
-                Continue with Google
-              </Text>
-            </View>
-          </TouchableOpacity>
-          <View
-            style={{ flexDirection: 'row' ,justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-            <Text
-              style={{ ...styles.nonExistingAccountText, color: "#8e8b8b" }}>
-              Don't have an account?
-            </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('SignUp' as never)}>
-              <Text
-                style={{ ...styles.nonExistingAccountText, fontWeight: 'bold', fontSize: 16 }}>
-                Sign Up
-              </Text>
-            </TouchableOpacity>
-          </View>
+        </Card>
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <PrimaryButton label={saving ? 'Logging in…' : 'Log in'} onPress={submit} loading={saving} disabled={saving} />
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Don't have an account?</Text>
+          <Pressable onPress={() => navigation.navigate('SignUp' as never)} hitSlop={8}>
+            <Text style={styles.footerLink}>Sign up</Text>
+          </Pressable>
         </View>
-      </View>
-    </SafeAreaView>
+      </KeyboardAvoidingView>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: 'transparent'
-  },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 15,
-  },
-  textWelcome: {
-    fontSize: 30,
-    textAlign: 'center',
-    color: colors.primary,
-    fontWeight: 'bold',
-
-  },
-  loginContainer: {
-    flex: 1,
-    backgroundColor: colors.border,
-    padding: spacing.xl,
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 50,
-    shadowColor: colors.shadow,
-    width: '100%',
-    gap: 15,
-  },
-  titleText: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: 500,
-  },
-  input: {
-    backgroundColor: "#f4efef",
-    borderRadius: 10,
-    height: 48,
-  },
-  loginButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    width: '100%',
-    borderRadius: 8,
-  },
-  nonExistingAccountText: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: 500
-  }
+  wrap: { paddingTop: spacing.xl },
+  brand: { fontSize: 40, fontWeight: '800', color: colors.primary, textAlign: 'center' },
+  heading: { fontSize: 22, fontWeight: '700', color: colors.text, textAlign: 'center', marginTop: spacing.xs },
+  sub: { fontSize: 13, color: colors.textMuted, textAlign: 'center', marginTop: 4, marginBottom: spacing.lg },
+  card: { padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surface },
+  label: { fontSize: 12, fontWeight: '600', color: colors.secondary, marginTop: spacing.md },
+  firstLabel: { marginTop: 0 },
+  input: { backgroundColor: colors.surface, marginTop: spacing.xs },
+  error: { color: palette.cancelledText, fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: spacing.md, marginBottom: spacing.xs },
+  footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginVertical: spacing.md },
+  footerText: { color: colors.textMuted, fontSize: 14 },
+  footerLink: { color: colors.primary, fontSize: 15, fontWeight: '700' },
 });

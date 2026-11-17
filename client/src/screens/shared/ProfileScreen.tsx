@@ -5,8 +5,11 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Avatar } from '../../components/Avatar';
 import { Card } from '../../components/Card';
+import { ChipGroup } from '../../components/forms/ChipGroup';
+import { SelectField } from '../../components/forms/SelectField';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
+import { FACULTIES, GENDERS, YEARS_OF_STUDY } from '../../constants/options';
 import { useRole } from '../../context/RoleContext';
 import { RoleProfile, SharedStackParamList } from '../../types';
 import { colors, palette, radius, spacing } from '../../utils/theme';
@@ -18,6 +21,7 @@ interface FormValues {
   anonymous_name: string;
   gender: string;
   faculty: string;
+  year_of_study: string;
 }
 
 interface FieldDef {
@@ -26,7 +30,13 @@ interface FieldDef {
   max: number; // matches the server's limits
   hint?: string;
   autoCapitalize?: 'none' | 'words';
+  // text (default) is typed; select opens a list; chips shows every option at once
+  kind?: 'text' | 'select' | 'chips';
+  options?: string[];
+  labelFor?: (option: string) => string;
 }
+
+const yearLabel = (y: string) => (y === 'Postgraduate' ? y : `Year ${y}`);
 
 const STUDENT_FIELDS: FieldDef[] = [
   { key: 'user_name', label: 'Display Name', max: 60, autoCapitalize: 'words' },
@@ -37,14 +47,16 @@ const STUDENT_FIELDS: FieldDef[] = [
     autoCapitalize: 'none',
     hint: 'Shown instead of your name on peer posts and anonymous consultations. It must be unique.',
   },
-  { key: 'gender', label: 'Gender', max: 30, autoCapitalize: 'words' },
-  { key: 'faculty', label: 'Faculty', max: 80, autoCapitalize: 'words' },
+  { key: 'faculty', label: 'Faculty', max: 80, kind: 'select', options: FACULTIES },
+  { key: 'year_of_study', label: 'Year of study', max: 12, kind: 'chips', options: YEARS_OF_STUDY, labelFor: yearLabel },
+  { key: 'gender', label: 'Gender', max: 30, kind: 'chips', options: GENDERS },
 ];
 
 const COUNSELLOR_FIELDS: FieldDef[] = [
   { key: 'user_name', label: 'Display Name', max: 60, autoCapitalize: 'words' },
   { key: 'displayTitle', label: 'Title', max: 20, autoCapitalize: 'words', hint: 'Shown before your name, e.g. "Dr."' },
   { key: 'specialization', label: 'Specialization', max: 100, autoCapitalize: 'words' },
+  { key: 'gender', label: 'Gender', max: 30, kind: 'chips', options: GENDERS },
 ];
 
 const fromProfile = (p: RoleProfile | null): FormValues => ({
@@ -54,6 +66,7 @@ const fromProfile = (p: RoleProfile | null): FormValues => ({
   anonymous_name: p?.anonymous_name ?? '',
   gender: p?.gender ?? '',
   faculty: p?.faculty ?? '',
+  year_of_study: p?.year_of_study ?? '',
 });
 
 export const ProfileScreen: React.FC = () => {
@@ -110,8 +123,8 @@ export const ProfileScreen: React.FC = () => {
       setError(null);
       await saveProfile(
         isCounsellor
-          ? { user_name: name, displayTitle: form.displayTitle.trim(), specialization: form.specialization.trim() }
-          : { user_name: name, anonymous_name: alias, gender: form.gender.trim(), faculty: form.faculty.trim() }
+          ? { user_name: name, displayTitle: form.displayTitle.trim(), specialization: form.specialization.trim(), gender: form.gender }
+          : { user_name: name, anonymous_name: alias, gender: form.gender, faculty: form.faculty, year_of_study: form.year_of_study }
       );
       touched.current = false;
       navigation.goBack();
@@ -138,17 +151,23 @@ export const ProfileScreen: React.FC = () => {
             {fields.map((f, i) => (
               <View key={f.key}>
                 <Text style={[styles.label, i === 0 && styles.firstLabel]}>{f.label}</Text>
-                <TextInput
-                  mode="outlined"
-                  value={form[f.key]}
-                  onChangeText={(v) => setField(f.key, v)}
-                  maxLength={f.max}
-                  autoCapitalize={f.autoCapitalize}
-                  autoCorrect={false}
-                  style={styles.input}
-                  outlineColor={colors.border}
-                  activeOutlineColor={colors.primary}
-                />
+                {f.kind === 'select' ? (
+                  <SelectField value={form[f.key]} options={f.options ?? []} onChange={(v) => setField(f.key, v)} title={f.label} placeholder={`Choose your ${f.label.toLowerCase()}`} />
+                ) : f.kind === 'chips' ? (
+                  <ChipGroup options={f.options ?? []} value={form[f.key]} onChange={(v) => setField(f.key, v)} labelFor={f.labelFor} />
+                ) : (
+                  <TextInput
+                    mode="outlined"
+                    value={form[f.key]}
+                    onChangeText={(v) => setField(f.key, v)}
+                    maxLength={f.max}
+                    autoCapitalize={f.autoCapitalize}
+                    autoCorrect={false}
+                    style={styles.input}
+                    outlineColor={colors.border}
+                    activeOutlineColor={colors.primary}
+                  />
+                )}
                 {f.hint ? <Text style={styles.hint}>{f.hint}</Text> : null}
               </View>
             ))}

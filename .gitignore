@@ -4,3 +4,6 @@ node_modules/
 dist/
 *.log
 .DS_Store
+# Real student/counsellor email list: personal data, never committed. Only the sample is.
+server/data/*.csv
+!server/data/allowed_emails.sample.csv

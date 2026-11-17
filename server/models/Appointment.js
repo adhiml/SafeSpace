@@ -14,6 +14,8 @@ const appointmentSchema = new mongoose.Schema(
     is_anonymous: { type: Boolean, default: false },
     // Seeded developer chatroom: always open, never shown in schedules or stats.
     is_dev_room: { type: Boolean, default: false },
+    // Set once the "upcoming appointment" reminder has gone out, so it is only sent once.
+    reminder_sent: { type: Boolean, default: false },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );
